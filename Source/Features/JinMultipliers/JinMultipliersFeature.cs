@@ -37,7 +37,9 @@ internal static class JinMultipliersFeature {
         var section = new ConfigSection(config, "JinMultipliers");
         var range = new AcceptableValueRange<int>(1, MaxMultiplier);
         Enabled = section.Bind("Enabled", true,
-            "Multiply the Jin you earn by the multipliers below. Off: the game's amounts");
+            "Multiply the Jin you earn by the multipliers below. Off: the game's amounts. Note: the game " +
+            "keeps at most 99,999 Jin whenever you buy or sell, and the excess is lost, so spend it before " +
+            "going above that");
         MonsterDrops = section.Bind("MonsterDrops", 1,
             "Multiplies the Jin of every coin you pick up, dropped by enemies, chests and breakable " +
             "objects (the game counts them all as enemy drops). Vanilla: 1. The death bag is never " +

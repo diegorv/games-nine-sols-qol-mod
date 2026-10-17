@@ -11,7 +11,7 @@ can be turned off. Work in progress. The player-facing description is in
 | Respawn | Respawn near where you died; boss deaths reload the room and respawn outside the arena | done | original |
 | ParryWindow | Configurable perfect-parry window (12 frames instead of 8) | done | Supidowagon's PerfectParry |
 | AnyDirectionParry | Parry regardless of which way Yi is facing | done | Supidowagon's AnyDirectionParry |
-| JinMultipliers | Multipliers for Jin drops, Transmute Unto Wealth and selling (recycling) | testing | Ixrec's JinMultiplier |
+| JinMultipliers | Multipliers for Jin drops, Transmute Unto Wealth and selling (recycling) | done | Ixrec's JinMultiplier |
 | Pickup | Loose drops fly to you from any distance | planned | nozwock's FarawayPickup |
 | HPNumbers | Yi's and the boss's HP and internal injury as numbers | planned | MicheliniDev's HPNumbers |
 | DeathPenalty | Never lose Jin or XP on death | planned | nozwock's NoDeathPenalty |
