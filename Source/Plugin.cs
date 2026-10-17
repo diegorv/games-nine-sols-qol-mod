@@ -5,6 +5,7 @@ using BepInEx;
 using BepInEx.Bootstrap;
 using HarmonyLib;
 using NineSolsQoL.Core;
+using NineSolsQoL.Features.AnyDirectionParry;
 using NineSolsQoL.Features.ParryWindow;
 using NineSolsQoL.Features.Respawn;
 
@@ -26,6 +27,7 @@ public class Plugin : BaseUnityPlugin {
         DebugTools.Init(Config);
         RespawnFeature.Init(Config);
         ParryWindowFeature.Init(Config);
+        AnyDirectionParryFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -43,6 +45,7 @@ public class Plugin : BaseUnityPlugin {
 
         Patch("Respawn", typeof(RespawnPatches));
         Patch("ParryWindow", typeof(ParryWindowPatches), "supidowagon.PerfectParry", "nozwock.PerfectParry");
+        Patch("AnyDirectionParry", typeof(AnyDirectionParryPatches), "supidowagon.AnyDirectionParry");
     }
 
     private void Update() {

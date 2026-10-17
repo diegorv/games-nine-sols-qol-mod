@@ -10,7 +10,7 @@ can be turned off. Work in progress. The player-facing description is in
 |---|---|---|---|
 | Respawn | Respawn near where you died; boss deaths reload the room and respawn outside the arena | done | original |
 | ParryWindow | Configurable perfect-parry window (12 frames instead of 8) | testing | Supidowagon's PerfectParry |
-| AnyDirectionParry | Parry regardless of which way Yi is facing | planned | Supidowagon's AnyDirectionParry |
+| AnyDirectionParry | Parry regardless of which way Yi is facing | testing | Supidowagon's AnyDirectionParry |
 | TrueDamage | Internal injury becomes real damage that cannot be won back | planned | Yukikaco's TrueDamage |
 | Jin | Multipliers for Jin drops, Transmute Unto Wealth and recycling | planned | Ixrec's JinMultiplier |
 | Pickup | Loose drops fly to you from any distance | planned | nozwock's FarawayPickup |
@@ -35,6 +35,9 @@ Source/
     UnityExtensions.cs       small helpers for logging Unity objects
     DebugTools.cs            [Debug] config, F9 dump, post-respawn watchdog, [hitch] frame logger
   Features/
+    AnyDirectionParry/
+      AnyDirectionParryFeature.cs   [AnyDirectionParry] config, the player-only override, dump section
+      AnyDirectionParryPatches.cs   postfix on the facing check that runs before a parry
     ParryWindow/
       ParryWindowFeature.cs  [ParryWindow] config, the window the game reads, dump section
       ParryWindowPatches.cs  transpiler: PlayerParryState.Parried reads the window from the mod
@@ -106,7 +109,7 @@ Mods whose ideas these features build on:
 | Mod | Author | License | Used for |
 |---|---|---|---|
 | [PerfectParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/PerfectParry/)) | Supidowagon | MIT | ParryWindow (the idea and its analysis of `PlayerParryState.Parried`; ours scales the game's windows at the point they are read instead of rewriting them) |
-| [AnyDirectionParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/AnyDirectionParry/)) | Supidowagon | MIT | AnyDirectionParry |
+| [AnyDirectionParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/AnyDirectionParry/)) | Supidowagon | MIT | AnyDirectionParry (the idea and the patch point, `EffectDealer.FacingRuleCheck`; ours is always player-only) |
 | [TrueDamage](https://github.com/asd9176506911298/NineSols-TrueDamage) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Yukikaco/TrueDamage/)) | Yukikaco (asd9176506911298) | MIT | TrueDamage |
 | [JinMultiplier](https://github.com/Ixrec/NineSolsJinMultiplier) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/)) | Ixrec | MIT | Jin |
 | [FarawayPickup](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/FarawayPickup/)) | nozwock | GPL-3.0 | Pickup (idea only) |

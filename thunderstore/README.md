@@ -18,3 +18,8 @@ by interacting with it.
 A perfect parry is easier to land: by default you can press parry up to 12 frames (200 ms) before a hit
 instead of 8 (133 ms). `PerfectParryFrames` sets the window, from 1 to 30 frames. The game's penalty for
 mashing parry still works the same way, scaled to your window.
+
+## Any direction parry
+
+Parry attacks that come from behind you. Attacks that cannot be parried at all stay that way, and you
+still have to press parry.
