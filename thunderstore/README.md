@@ -24,6 +24,11 @@ mashing parry still works the same way, scaled to your window.
 Parry attacks that come from behind you. Attacks that cannot be parried at all stay that way, and you
 still have to press parry.
 
+## Pickup
+
+Jin, health, qi, ammo and arrows dropped anywhere in the room fly to you on their own, `Delay` seconds
+(0.5 by default) after they appear. The death bag and key items still have to be picked up by hand.
+
 ## Jin multipliers
 
 Multipliers for the Jin you earn, all 1 (unchanged) by default:

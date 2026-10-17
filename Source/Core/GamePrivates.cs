@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using UnityEngine;
 
 namespace NineSolsQoL.Core;
 
@@ -80,10 +81,15 @@ internal sealed class DropItemPrivates {
     // What the drop gives (GetComponent<IDropping> on the drop, done once by the game)
     public AccessTools.FieldRef<DropItem, IDropping> Effect = null!;
 
-    // The game's force-fly timer, set to 0 by EnterLevelReset each time the drop is spawned or reused
+    // The game's force-fly timer, set to 0 by EnterLevelReset (called by LootSpawner on every spawn
+    // and by the pool on every reuse)
     public AccessTools.FieldRef<DropItem, float> FlyCounter = null!;
 
-    // Turns the collider into a trigger and the body kinematic, as the game does when a flight starts
+    // The drop's body, which the game moves while the drop flies
+    public AccessTools.FieldRef<DropItem, Rigidbody2D> Body = null!;
+
+    // What the game calls when a flight starts: the collider becomes a trigger (for drops with
+    // IsNeedGroundToFlyToPlayer, the default) and the body kinematic
     public Action<DropItem> TurnOffSolid = null!;
 
     public static DropItemPrivates? Find() {
@@ -91,8 +97,10 @@ internal sealed class DropItemPrivates {
         var flyTarget = GamePrivates.Find<DropItem, Transform>("flyToTarget");
         var effect = GamePrivates.Find<DropItem, IDropping>("_iDropping");
         var flyCounter = GamePrivates.Find<DropItem, float>("_forceFlyToPlayerCounter");
+        var body = GamePrivates.Find<DropItem, Rigidbody2D>("_rigidBody2D");
         var turnOffSolid = GamePrivates.FindMethod<Action<DropItem>>(typeof(DropItem), "ForceFlyToTargetTurnOffSolid");
-        if (afterLevelReset == null || flyTarget == null || effect == null || flyCounter == null || turnOffSolid == null) {
+        if (afterLevelReset == null || flyTarget == null || effect == null || flyCounter == null || body == null ||
+            turnOffSolid == null) {
             return null;
         }
 
@@ -101,6 +109,7 @@ internal sealed class DropItemPrivates {
             FlyTarget = flyTarget,
             Effect = effect,
             FlyCounter = flyCounter,
+            Body = body,
             TurnOffSolid = turnOffSolid,
         };
     }

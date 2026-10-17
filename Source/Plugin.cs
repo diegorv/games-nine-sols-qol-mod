@@ -8,6 +8,7 @@ using NineSolsQoL.Core;
 using NineSolsQoL.Features.AnyDirectionParry;
 using NineSolsQoL.Features.JinMultipliers;
 using NineSolsQoL.Features.ParryWindow;
+using NineSolsQoL.Features.Pickup;
 using NineSolsQoL.Features.Respawn;
 
 namespace NineSolsQoL;
@@ -30,6 +31,7 @@ public class Plugin : BaseUnityPlugin {
         ParryWindowFeature.Init(Config);
         AnyDirectionParryFeature.Init(Config);
         JinMultipliersFeature.Init(Config);
+        PickupFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -49,6 +51,7 @@ public class Plugin : BaseUnityPlugin {
         Patch("ParryWindow", typeof(ParryWindowPatches), "supidowagon.PerfectParry", "nozwock.PerfectParry");
         Patch("AnyDirectionParry", typeof(AnyDirectionParryPatches), "supidowagon.AnyDirectionParry");
         Patch("JinMultipliers", typeof(JinMultipliersPatches), "JinMultiplier");
+        Patch("Pickup", typeof(PickupPatches), "nozwock.FarawayPickup");
     }
 
     private void Update() {
