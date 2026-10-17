@@ -5,3 +5,6 @@
 obj
 bin
 /*.DotSettings.user
+
+# Research notes that quote decompiled game code
+/research
