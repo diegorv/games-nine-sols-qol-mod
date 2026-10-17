@@ -19,6 +19,11 @@ internal static class GamePrivates {
     private static readonly Lazy<AccessTools.FieldRef<PlayerParryState, float[]>?> ParryWindowTable =
         new(() => Find<PlayerParryState, float[]>("spamDatas"));
 
+    private static readonly Lazy<DropItemPrivates?> DropItemAccess = new(DropItemPrivates.Find);
+
+    // The private parts of DropItem the pickup feature uses, or null when a game update renamed one
+    public static DropItemPrivates? DropItems => DropItemAccess.Value;
+
     // The game's perfect-parry windows in seconds, indexed by PlayerParryState.spamLevel. Read only:
     // the parry window feature never changes the array.
     public static float[]? ParryWindows(PlayerParryState state) =>
@@ -43,12 +48,60 @@ internal static class GamePrivates {
         point = null!;
     }
 
-    private static AccessTools.FieldRef<T, TField>? Find<T, TField>(string name) where T : class {
+    internal static AccessTools.FieldRef<T, TField>? Find<T, TField>(string name) where T : class {
         try {
             return AccessTools.FieldRefAccess<T, TField>(name);
         } catch (Exception e) {
             Log.Error($"Game field {typeof(T).Name}.{name} not found, a game update probably changed it: {e.Message}");
             return null;
         }
+    }
+
+    // An instance method as a delegate whose first parameter is the instance
+    internal static TDelegate? FindMethod<TDelegate>(Type type, string name) where TDelegate : Delegate {
+        try {
+            var method = AccessTools.Method(type, name) ?? throw new MissingMethodException(type.Name, name);
+            return AccessTools.MethodDelegate<TDelegate>(method);
+        } catch (Exception e) {
+            Log.Error($"Game method {type.Name}.{name} not found, a game update probably changed it: {e.Message}");
+            return null;
+        }
+    }
+}
+
+// DropItem's private members, all found or none
+internal sealed class DropItemPrivates {
+    // False until the drop's first EnterLevelReset; DropItem.Update does nothing before that
+    public AccessTools.FieldRef<DropItem, bool> AfterLevelReset = null!;
+
+    // Where a flying drop goes; set only while it flies to Yi
+    public AccessTools.FieldRef<DropItem, Transform> FlyTarget = null!;
+
+    // What the drop gives (GetComponent<IDropping> on the drop, done once by the game)
+    public AccessTools.FieldRef<DropItem, IDropping> Effect = null!;
+
+    // The game's force-fly timer, set to 0 by EnterLevelReset each time the drop is spawned or reused
+    public AccessTools.FieldRef<DropItem, float> FlyCounter = null!;
+
+    // Turns the collider into a trigger and the body kinematic, as the game does when a flight starts
+    public Action<DropItem> TurnOffSolid = null!;
+
+    public static DropItemPrivates? Find() {
+        var afterLevelReset = GamePrivates.Find<DropItem, bool>("_afterLevelReset");
+        var flyTarget = GamePrivates.Find<DropItem, Transform>("flyToTarget");
+        var effect = GamePrivates.Find<DropItem, IDropping>("_iDropping");
+        var flyCounter = GamePrivates.Find<DropItem, float>("_forceFlyToPlayerCounter");
+        var turnOffSolid = GamePrivates.FindMethod<Action<DropItem>>(typeof(DropItem), "ForceFlyToTargetTurnOffSolid");
+        if (afterLevelReset == null || flyTarget == null || effect == null || flyCounter == null || turnOffSolid == null) {
+            return null;
+        }
+
+        return new DropItemPrivates {
+            AfterLevelReset = afterLevelReset,
+            FlyTarget = flyTarget,
+            Effect = effect,
+            FlyCounter = flyCounter,
+            TurnOffSolid = turnOffSolid,
+        };
     }
 }
