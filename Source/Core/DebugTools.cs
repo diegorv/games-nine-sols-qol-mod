@@ -30,11 +30,13 @@ internal static class DebugTools {
     private static float lastFrameTime;
 
     public static void Init(ConfigFile config) {
-        DebugLogging = config.Bind("Debug", "DebugLogging", true,
-            "Write detailed diagnostics to the BepInEx log");
+        var section = new ConfigSection(config, "Debug");
+        DebugLogging = section.Bind("DebugLogging", true,
+            "Write detailed diagnostics to the BepInEx log", advanced: true);
         // F8 opens one of the game's own debug screens
-        DumpKey = config.Bind("Debug", "DumpKey", new KeyboardShortcut(KeyCode.F9),
-            "Writes the player state and every collider around the player to the BepInEx log");
+        DumpKey = section.Bind("DumpKey", new KeyboardShortcut(KeyCode.F9),
+            "Writes the player state, each feature's state and every collider around the player to the " +
+            "BepInEx log", advanced: true);
     }
 
     // Lines a feature adds to the dump, e.g. its own tracking state
@@ -118,7 +120,11 @@ internal static class DebugTools {
                  $"lastSafeGround={player.lastSafeGroundPosition} onGround={player.onGround} " +
                  $"nativeQuickRevive={mapData != null && mapData.QuickRevive}");
         foreach (var section in dumpSections) {
-            foreach (var line in section(core)) Log.Info($"[dump] {line}");
+            try {
+                foreach (var line in section(core)) Log.Info($"[dump] {line}");
+            } catch (Exception e) {
+                Log.Error($"[dump] a feature's dump section failed: {e}");
+            }
         }
 
         Log.Info($"[dump] {DescribeDeathBag(core)}");

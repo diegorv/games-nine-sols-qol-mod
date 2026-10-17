@@ -25,9 +25,11 @@ below.
 
 ```
 Source/
-  Plugin.cs                  entry point: each feature's Init, RCGLifeCycle registration, Harmony
+  Plugin.cs                  entry point: each feature's Init and patches, RCGLifeCycle registration
   Log.cs                     logging (Log.Debug only when DebugLogging is on)
   Core/
+    ConfigSection.cs         binds a feature's config entries in the order the in-game menu shows them
+    ConfigurationManagerAttributes.cs  how the in-game config menu (F1) shows an entry
     GameAccess.cs            safe access to the game singletons
     GamePrivates.cs          the private game fields the mod reads or writes
     UnityExtensions.cs       small helpers for logging Unity objects
@@ -45,7 +47,12 @@ Source/
 
 A new feature goes in `Features/<Name>/`: a `<Name>Feature` class that binds its config section in `Init`, a
 `<Name>Patches` class with its Harmony patches, and the code they forward to. `Plugin.Awake` calls each
-feature's `Init`.
+feature's `Init`; `Plugin.Start` applies each feature's patches, unless a mod the feature replaces is loaded
+(then the feature stays off and the log says why).
+
+Every option is in the in-game config menu ([ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager),
+`F1`): one section per feature with `Enabled` first, a description that says the vanilla value, a range for
+numbers (shown as a slider), and changes apply right away. Debug options are under "Advanced settings".
 
 ## Building
 
@@ -112,6 +119,8 @@ Tools and resources:
   started from.
 - [BepInEx](https://github.com/BepInEx/BepInEx), [HarmonyX](https://github.com/BepInEx/HarmonyX) and
   [ScriptEngine](https://github.com/BepInEx/BepInEx.Debug) for hot reloading.
+- [BepInEx.ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager), the in-game config
+  menu; `ConfigurationManagerAttributes` follows its convention.
 - [libs-stripped](https://github.com/nine-sols-modding/libs-stripped), the game DLLs used by the CI build.
 - [dnSpy](https://github.com/dnSpy/dnSpy) to read the game's code.
 - [Nine Sols modding wiki](https://github.com/nine-sols-modding/Resources/wiki),

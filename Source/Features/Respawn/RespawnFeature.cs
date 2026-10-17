@@ -11,12 +11,13 @@ internal static class RespawnFeature {
     public static ConfigEntry<bool> BossRespawnOutsideArena = null!;
 
     public static void Init(ConfigFile config) {
-        Enabled = config.Bind("Respawn", "Enabled", true,
-            "Respawn near where you died instead of at the last Root Node. Off: the game's normal respawn " +
-            "for every death");
-        BossRespawnOutsideArena = config.Bind("Respawn", "BossRespawnOutsideArena", true,
+        var section = new ConfigSection(config, "Respawn");
+        Enabled = section.Bind("Enabled", true,
+            "Respawn near where you died, on the last safe ground, instead of at the last Root Node. " +
+            "Off: the game's respawn at the last Root Node for every death");
+        BossRespawnOutsideArena = section.Bind("BossRespawnOutsideArena", true,
             "After dying in a boss fight, reload the room so the fight starts over and respawn just " +
-            "outside the arena. Off: the game's normal respawn after boss deaths");
+            "outside the arena. Off: the game's respawn at the last Root Node after boss deaths");
 
         DebugTools.AddDumpSection(core => new[] { SafeTrail.Describe() }.Concat(ArenaTracker.Describe(core)));
     }
