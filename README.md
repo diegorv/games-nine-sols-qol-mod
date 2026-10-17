@@ -14,8 +14,10 @@ can be turned off. Work in progress. The player-facing description is in
 | JinMultipliers | Multipliers for Jin drops, Transmute Unto Wealth and selling (recycling) | done | Ixrec's JinMultiplier |
 | Pickup | Loose drops fly to you from any distance | done | nozwock's FarawayPickup |
 | HPNumbers | Yi's and the boss's HP and internal injury as numbers | planned | MicheliniDev's HPNumbers |
-| DeathPenalty | Never lose Jin or XP on death | planned | nozwock's NoDeathPenalty |
+| NoDeathPenalty | Never lose Jin or XP on death; the death bag still appears, empty | planned | nozwock's NoDeathPenalty |
 | Teleport | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
+| AirDash | One dash in the air per jump, recharged by touching ground, walls and the like | planned | original |
+| HealSpeed | Healing with the pipe takes less time (multiplier) | planned | original |
 
 Every feature is our own implementation, written from the game's code. Ideas taken from other mods are credited
 below.
@@ -118,11 +120,11 @@ Mods whose ideas these features build on:
 | [JinMultiplier](https://github.com/Ixrec/NineSolsJinMultiplier) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/)) | Ixrec | MIT | JinMultipliers (the idea and the patch points, `AddGold` and the shop's gold income; ours only multiplies sales and shows the real amount in the shop) |
 | [FarawayPickup](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/FarawayPickup/)) | nozwock | GPL-3.0 | Pickup (idea only; ours starts the game's own touch-pickup flight and leaves no field changed on pooled drops) |
 | [HPNumbers](https://github.com/MicheliniDev/NineSols-HPNumbersMod) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/MicheliniDev/HPNumbers/)) | MicheliniDev | MIT | HPNumbers |
-| [NoDeathPenalty](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/)) | nozwock | GPL-3.0 | DeathPenalty (idea only) |
-| [NoDeathPenaltyNineSols](https://github.com/Baiker000/NoDeathPenaltyNineSols), the original nozwock's version builds on | Baiker000 | none stated | DeathPenalty (idea only) |
+| [NoDeathPenalty](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/)) | nozwock | GPL-3.0 | NoDeathPenalty (idea only) |
+| [NoDeathPenaltyNineSols](https://github.com/Baiker000/NoDeathPenaltyNineSols), the original nozwock's version builds on | Baiker000 | none stated | NoDeathPenalty (idea only) |
 | [TeleportFromAnyNode](https://github.com/nozwock/nine-sols-mods) | nozwock | GPL-3.0 | Teleport (idea only) |
 | [TeleportFromAnywhere](https://github.com/Ixrec/NineSolsTeleportFromAnywhere) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/TeleportFromAnywhere/)) | Ixrec | MIT | Teleport (reference for edge cases) |
-| [nine-sols-no-penalty](https://github.com/KiViXJ/nine-sols-no-penalty) | KiViXJ | MIT | DeathPenalty (reference) |
+| [nine-sols-no-penalty](https://github.com/KiViXJ/nine-sols-no-penalty) | KiViXJ | MIT | NoDeathPenalty (reference) |
 
 Tools and resources:
 
