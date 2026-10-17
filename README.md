@@ -9,8 +9,8 @@ can be turned off. Work in progress. The player-facing description is in
 | Feature | What it does | Status | Based on |
 |---|---|---|---|
 | Respawn | Respawn near where you died; boss deaths reload the room and respawn outside the arena | done | original |
-| ParryWindow | Configurable perfect-parry window (12 frames instead of 8) | testing | Supidowagon's PerfectParry |
-| AnyDirectionParry | Parry regardless of which way Yi is facing | testing | Supidowagon's AnyDirectionParry |
+| ParryWindow | Configurable perfect-parry window (12 frames instead of 8) | done | Supidowagon's PerfectParry |
+| AnyDirectionParry | Parry regardless of which way Yi is facing | done | Supidowagon's AnyDirectionParry |
 | TrueDamage | Internal injury becomes real damage that cannot be won back | planned | Yukikaco's TrueDamage |
 | Jin | Multipliers for Jin drops, Transmute Unto Wealth and recycling | planned | Ixrec's JinMultiplier |
 | Pickup | Loose drops fly to you from any distance | planned | nozwock's FarawayPickup |
