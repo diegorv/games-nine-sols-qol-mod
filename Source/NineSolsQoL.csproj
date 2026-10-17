@@ -42,6 +42,13 @@
         <Reference Include="UniTask">
             <HintPath>$(DllPath)/UniTask.dll</HintPath>
         </Reference>
+        <!-- UI texts, e.g. MerchandiseItemButton.priceText (TMP_Text derives from UnityEngine.UI types) -->
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>$(DllPath)/Unity.TextMeshPro.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>$(DllPath)/UnityEngine.UI.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>

@@ -11,8 +11,7 @@ can be turned off. Work in progress. The player-facing description is in
 | Respawn | Respawn near where you died; boss deaths reload the room and respawn outside the arena | done | original |
 | ParryWindow | Configurable perfect-parry window (12 frames instead of 8) | done | Supidowagon's PerfectParry |
 | AnyDirectionParry | Parry regardless of which way Yi is facing | done | Supidowagon's AnyDirectionParry |
-| TrueDamage | Internal injury becomes real damage that cannot be won back | planned | Yukikaco's TrueDamage |
-| Jin | Multipliers for Jin drops, Transmute Unto Wealth and recycling | planned | Ixrec's JinMultiplier |
+| JinMultipliers | Multipliers for Jin drops, Transmute Unto Wealth and selling (recycling) | testing | Ixrec's JinMultiplier |
 | Pickup | Loose drops fly to you from any distance | planned | nozwock's FarawayPickup |
 | HPNumbers | Yi's and the boss's HP and internal injury as numbers | planned | MicheliniDev's HPNumbers |
 | DeathPenalty | Never lose Jin or XP on death | planned | nozwock's NoDeathPenalty |
@@ -38,6 +37,9 @@ Source/
     AnyDirectionParry/
       AnyDirectionParryFeature.cs   [AnyDirectionParry] config, the player-only override, dump section
       AnyDirectionParryPatches.cs   postfix on the facing check that runs before a parry
+    JinMultipliers/
+      JinMultipliersFeature.cs  [JinMultipliers] config, the multiplied amounts, shop price, dump section
+      JinMultipliersPatches.cs  AddGold prefix, shop trade and shop row postfixes
     ParryWindow/
       ParryWindowFeature.cs  [ParryWindow] config, the window the game reads, dump section
       ParryWindowPatches.cs  transpiler: PlayerParryState.Parried reads the window from the mod
@@ -110,8 +112,7 @@ Mods whose ideas these features build on:
 |---|---|---|---|
 | [PerfectParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/PerfectParry/)) | Supidowagon | MIT | ParryWindow (the idea and its analysis of `PlayerParryState.Parried`; ours scales the game's windows at the point they are read instead of rewriting them) |
 | [AnyDirectionParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/AnyDirectionParry/)) | Supidowagon | MIT | AnyDirectionParry (the idea and the patch point, `EffectDealer.FacingRuleCheck`; ours is always player-only) |
-| [TrueDamage](https://github.com/asd9176506911298/NineSols-TrueDamage) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Yukikaco/TrueDamage/)) | Yukikaco (asd9176506911298) | MIT | TrueDamage |
-| [JinMultiplier](https://github.com/Ixrec/NineSolsJinMultiplier) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/)) | Ixrec | MIT | Jin |
+| [JinMultiplier](https://github.com/Ixrec/NineSolsJinMultiplier) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/)) | Ixrec | MIT | JinMultipliers (the idea and the patch points, `AddGold` and the shop's gold income; ours only multiplies sales and shows the real amount in the shop) |
 | [FarawayPickup](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/FarawayPickup/)) | nozwock | GPL-3.0 | Pickup (idea only) |
 | [HPNumbers](https://github.com/MicheliniDev/NineSols-HPNumbersMod) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/MicheliniDev/HPNumbers/)) | MicheliniDev | MIT | HPNumbers |
 | [NoDeathPenalty](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/)) | nozwock | GPL-3.0 | DeathPenalty (idea only) |
