@@ -9,7 +9,7 @@ can be turned off. Work in progress. The player-facing description is in
 | Feature | What it does | Status | Based on |
 |---|---|---|---|
 | Respawn | Respawn near where you died; boss deaths reload the room and respawn outside the arena | done | original |
-| ParryWindow | Configurable perfect-parry window (12 frames instead of 8) | planned | Supidowagon's PerfectParry |
+| ParryWindow | Configurable perfect-parry window (12 frames instead of 8) | testing | Supidowagon's PerfectParry |
 | AnyDirectionParry | Parry regardless of which way Yi is facing | planned | Supidowagon's AnyDirectionParry |
 | TrueDamage | Internal injury becomes real damage that cannot be won back | planned | Yukikaco's TrueDamage |
 | Jin | Multipliers for Jin drops, Transmute Unto Wealth and recycling | planned | Ixrec's JinMultiplier |
@@ -35,6 +35,9 @@ Source/
     UnityExtensions.cs       small helpers for logging Unity objects
     DebugTools.cs            [Debug] config, F9 dump, post-respawn watchdog, [hitch] frame logger
   Features/
+    ParryWindow/
+      ParryWindowFeature.cs  [ParryWindow] config, the window the game reads, dump section
+      ParryWindowPatches.cs  transpiler: PlayerParryState.Parried reads the window from the mod
     Respawn/
       RespawnFeature.cs      [Respawn] config and dump section
       RespawnPatches.cs      every Harmony patch of the feature; they only forward to the code below
@@ -47,8 +50,9 @@ Source/
 
 A new feature goes in `Features/<Name>/`: a `<Name>Feature` class that binds its config section in `Init`, a
 `<Name>Patches` class with its Harmony patches, and the code they forward to. `Plugin.Awake` calls each
-feature's `Init`; `Plugin.Start` applies each feature's patches, unless a mod the feature replaces is loaded
-(then the feature stays off and the log says why).
+feature's `Init`; `Plugin.Start` applies each feature's patches with its own Harmony instance, unless a mod the
+feature replaces is loaded (then the feature stays off and the log says why). Harmony only applies the methods
+declared in the `<Name>Patches` class itself, so patches must not go in nested classes.
 
 Every option is in the in-game config menu ([ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager),
 `F1`): one section per feature with `Enabled` first, a description that says the vanilla value, a range for
@@ -101,7 +105,7 @@ Mods whose ideas these features build on:
 
 | Mod | Author | License | Used for |
 |---|---|---|---|
-| [PerfectParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/PerfectParry/)) | Supidowagon | MIT | ParryWindow |
+| [PerfectParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/PerfectParry/)) | Supidowagon | MIT | ParryWindow (the idea and its analysis of `PlayerParryState.Parried`; ours scales the game's windows at the point they are read instead of rewriting them) |
 | [AnyDirectionParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/AnyDirectionParry/)) | Supidowagon | MIT | AnyDirectionParry |
 | [TrueDamage](https://github.com/asd9176506911298/NineSols-TrueDamage) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Yukikaco/TrueDamage/)) | Yukikaco (asd9176506911298) | MIT | TrueDamage |
 | [JinMultiplier](https://github.com/Ixrec/NineSolsJinMultiplier) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/)) | Ixrec | MIT | Jin |

@@ -16,9 +16,12 @@ internal static class Log {
 
     public static void Error(object data) => source?.LogError(data);
 
+    // Whether Debug writes anything: check it before building an expensive message
+    public static bool DebugEnabled => DebugTools.DebugLogging?.Value == true;
+
     // Diagnostics, only when DebugLogging is on. Written at Info level because BepInEx's default
     // disk log filters out the Debug level.
     public static void Debug(object data) {
-        if (DebugTools.DebugLogging?.Value == true) source?.LogInfo(data);
+        if (DebugEnabled) source?.LogInfo(data);
     }
 }

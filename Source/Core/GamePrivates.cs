@@ -16,6 +16,14 @@ internal static class GamePrivates {
     private static readonly Lazy<AccessTools.FieldRef<PlayerDeadRecord, DropPickable>?> LastDroppedBag =
         new(() => Find<PlayerDeadRecord, DropPickable>("lastDroppedBag"));
 
+    private static readonly Lazy<AccessTools.FieldRef<PlayerParryState, float[]>?> ParryWindowTable =
+        new(() => Find<PlayerParryState, float[]>("spamDatas"));
+
+    // The game's perfect-parry windows in seconds, indexed by PlayerParryState.spamLevel. Read only:
+    // the parry window feature never changes the array.
+    public static float[]? ParryWindows(PlayerParryState state) =>
+        ParryWindowTable.Value is { } field ? field(state) : null;
+
     // The death bag object the game spawned last (PlayerDeadRecord.GenerateDeadBag), if any
     public static DropPickable? DroppedBag(PlayerDeadRecord record) =>
         LastDroppedBag.Value is { } field ? field(record) : null;
