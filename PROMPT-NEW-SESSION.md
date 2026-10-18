@@ -174,6 +174,7 @@ Source/
     HPNumbers/               HPNumbersFeature, HPNumber (own overlay canvas, read in LateUpdate; no patches)
     AirDash/                 AirDashFeature, AirDashPatches (Player.DodgeCheck transpiler)
     HealSpeed/               HealSpeedFeature, HealSpeedPatches (PlayerDrinkPotionState.OnStateEnter transpiler)
+    DashInvulnerability/     DashInvulnerabilityFeature, DashInvulnerabilityPatches (OnStateExit transpiler, DodgeEnd prefix, hit diagnostics)
 ```
 
 Conventions (keep them):
@@ -222,6 +223,7 @@ Conventions (keep them):
 | HPNumbers | `Enabled`; `BossHP` (on) and `BossInternalHP` (off), each with `Position` (pixels of a 1920x1080 screen, left end of the number), `FontSize` (8-72, 19), `Color` | Like MicheliniDev's HPNumbers: TMP texts on a canvas of our own (ScreenSpaceOverlay + CanvasScaler 1920x1080, registered in RCGLifeCycle, destroyed on unload), read in `LateUpdate`, text rebuilt only when the int changes. The boss is the one whose bar the game shows (`monsterHpUI.CurrentBossHP.bindingPosture`: `GetPostureValue()`, `InternalInjury`); everything hides with the HUD (`playerInGameUIDisplayVote.Result`). No Yi numbers and current value only (my choice). Off when `HPNumbers` (the original's GUID) is loaded. |
 | AirDash | `Enabled` (default **off**, my choice) | The game has its own air dash (one per air time: `CanRoll` needs `airDodgeCount == 0`, refilled by `ResetJumpAndDash`), gated by the `RollDodgeInAirUpgrade` ability, unlocked later in the game. A transpiler swaps the one `RollDodgeInAirUpgrade.IsActivated` read in `Player.DodgeCheck` (IL_0054/IL_0059) for `AirDashUnlocked(upgrade)` = the game's getter OR (`Enabled` and not `IsAcquired`): only before the upgrade is acquired, so once it is, the game's own rules (challenge ability packs, unequip, conditions) decide again. With the Down Dash jade, down dashes are unlimited (the game's own `CanDownDash`). The ability is never written (no save change; UI and skill tree still see it locked). `[air dash]` Debug line when the mod made the difference. |
 | HealSpeed | `Enabled` (default on) | Heal at the Quick Dose jade's speed without the jade (my choice; no multiplier, no stacking). `PlayerDrinkPotionState.OnStateEnter` sets `animator.speed = 1.66666f` when its private `isSpeedUpHeal` (`SpeedUpHealJade.IsActivated`) is true; a transpiler swaps that one call for `SpeedUpHeal(state)` = the jade's getter OR `Enabled`. The jade the state checks is `(Jade Data) Fast Pipe 速藥玉` (seen in game with F9). `[heal]` Debug line when the mod made the difference. |
+| DashInvulnerability | `Enabled` (on), `InvulnerabilityAfterDash` (0.05-0.5 s, default 0.1, my choice; vanilla 0.05) | I asked for invulnerability during the dash: the game already has it, and the F9/log diagnostics showed the hits came right after it (the Spear Horse's `SlashDamage`, always ~0.05 s after the receivers came back). A transpiler swaps the one `ldc.r4 0.05` between `ldftn DodgeEnd` and `Timer.AddTask` in `PlayerRollState.OnStateExit` for `InvulnerabilityAfterDash()`; a prefix skips a `DodgeEnd` that fires while a new dash (not weak) is under way (the timer has no owner, so the previous dash's end would cut the new one's invulnerability). A prefix on `Player.OnTakeDamage` logs `[dash]` hits during or right after a dash. With 0.1 s, two of three slash hits still landed ~0.05 s after the window (0.2 s would cover them); I kept 0.1. |
 
 TrueDamage was **dropped** (it makes the game harder); its report stays in `research/truedamage.md`.
 
@@ -334,6 +336,10 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
   zipline, every parry, jump-kick bounce, weakness hit, talisman stick and respawn; it also refills double jump,
   air attack, spin kick and the parry cooldown, so never call it to grant a dash. Each roll zeroes VelY and has no
   gravity. `RollDodgeInAirUpgrade` is read in code only by `DodgeCheck` (and the `activate.airDash` console command).
+- Dash invulnerability: `PlayerRollState.OnStateEnter` turns off every hit receiver whose `CanDisable` is true (all
+  but `SolidTrap` and `Heal`) unless `IsWeak`; `OnStateExit` schedules `DodgeEnd` (`IsDodgeAttack = false`,
+  receivers back on) with `Timer.AddTask(..., 0.05f, null, "")`, an owner-less task nothing cancels.
+  `IsDodgeAttack` has no effect (its readers in `PlayerAttackState` are empty branches).
 - Healing: `PlayerDrinkPotionState`; the heal happens at the "Heal" clip's `Done` animation event, and the Quick
   Dose jade (`(Jade Data) Fast Pipe 速藥玉`, the state's own `SpeedUpHealJade` wrapper) only sets `animator.speed =
   1.66666f` on enter (`OnStateExit` sets 1). `PlayerMainAbilityCollection.SpeedUpHealJade` is never read.
@@ -426,9 +432,9 @@ What the research found:
   suspect: compare `[hitch]` lines and try `[Logging.Console] Enabled = false`.
 - History: commit `1712573` ("Remove old prompt") carries part of the Pickup code and does not build alone;
   `31a03bc` completes it.
-- Reviews still running when this handoff was written: HPNumbers (`8f49ab4`), AirDash (`2fbd23d`) and HealSpeed
-  (`9bd509c`); the three features passed their in-game tests. If `git log` has no "Apply the <Feature> review
-  findings" commit for one of them, run an adversarial review of that commit's diff before the release.
+- The HPNumbers, AirDash and HealSpeed reviews are applied (`1617416`, `defc3c8`, `8277459`). DashInvulnerability's
+  review was started on its first version (without the transpiler): if `git log` has no "Apply the
+  DashInvulnerability review findings" commit, review the feature's current diff (transpiler included).
 - Release polish later: `DebugLogging` off by default, Thunderstore namespace/websiteUrl/icon, version,
   remove one-off dump lines.
 

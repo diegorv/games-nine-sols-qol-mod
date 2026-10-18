@@ -30,6 +30,13 @@ dialogues and cutscenes.
 Healing with the pipe is as fast as with the Quick Dose jade, without equipping it: the animation plays 1.67
 times faster, so a heal takes 60% of the time. With the jade equipped nothing changes.
 
+## Dash invulnerability
+
+A dash already makes Yi invulnerable, but the game ends it 0.05 s after the dash, so an attack that is still
+active when the dash ends can hit right away. Yi now stays invulnerable for `InvulnerabilityAfterDash`
+seconds after a dash (0.1 by default), and a dash that starts during that time keeps its own invulnerability.
+Traps still hurt, as in the game.
+
 ## Air dash
 
 Off by default. The game gives Yi an air dash later on (once per air time, recharged when you land, slide on

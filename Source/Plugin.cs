@@ -7,6 +7,7 @@ using HarmonyLib;
 using NineSolsQoL.Core;
 using NineSolsQoL.Features.AirDash;
 using NineSolsQoL.Features.AnyDirectionParry;
+using NineSolsQoL.Features.DashInvulnerability;
 using NineSolsQoL.Features.HealSpeed;
 using NineSolsQoL.Features.HPNumbers;
 using NineSolsQoL.Features.JinMultipliers;
@@ -40,6 +41,7 @@ public class Plugin : BaseUnityPlugin {
         HPNumbersFeature.Init(Config);
         AirDashFeature.Init(Config);
         HealSpeedFeature.Init(Config);
+        DashInvulnerabilityFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -64,6 +66,7 @@ public class Plugin : BaseUnityPlugin {
             "nozwock.NoDeathPenalty");
         Patch("AirDash", typeof(AirDashPatches));
         Patch("HealSpeed", typeof(HealSpeedPatches));
+        Patch("DashInvulnerability", typeof(DashInvulnerabilityPatches));
         // Patches nothing: it only draws numbers
         HPNumbersFeature.Active = !IsReplaced("HPNumbers", "HPNumbers");
     }

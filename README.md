@@ -18,6 +18,7 @@ can be turned off. Work in progress. The player-facing description is in
 | Teleport | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
 | AirDash | The game's own air dash (once per air time) before you acquire its upgrade; off by default | done | original |
 | HealSpeed | Heal with the pipe as fast as with the Quick Dose jade, without the jade | done | original |
+| DashInvulnerability | Invulnerable a little longer after a dash (0.1 s instead of 0.05), also when dashes follow each other | done | original |
 
 Every feature is our own implementation, written from the game's code. Ideas taken from other mods are credited
 below.
@@ -42,6 +43,9 @@ Source/
     AnyDirectionParry/
       AnyDirectionParryFeature.cs   [AnyDirectionParry] config, the player-only override, dump section
       AnyDirectionParryPatches.cs   postfix on the facing check that runs before a parry
+    DashInvulnerability/
+      DashInvulnerabilityFeature.cs  [DashInvulnerability] config, the delay the dash reads, dump section
+      DashInvulnerabilityPatches.cs  transpiler on the dash's exit, prefix on DodgeEnd, hit diagnostics
     HealSpeed/
       HealSpeedFeature.cs    [HealSpeed] config, the jade check the heal reads instead, dump section
       HealSpeedPatches.cs    transpiler: the heal asks the mod whether to play at the Quick Dose jade's speed
