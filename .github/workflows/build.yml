@@ -2,8 +2,7 @@ name: build
 
 # Every push and pull request builds the mod against the newest game version in libs-stripped.
 # A tag vMAJOR.MINOR.PATCH also releases that version: the GitHub release (package zip, DLL,
-# checksums, notes from the commits) and, once approved in the thunderstore environment, the
-# Thunderstore upload.
+# checksums, notes from the commits) and the Thunderstore upload.
 on:
   push:
     branches: [ "main" ]
@@ -128,7 +127,7 @@ jobs:
     needs: [ build, release ]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    # Required reviewers on this environment: a version can never be changed once uploaded
+    # The environment holds the TCLI_AUTH_TOKEN secret (no required reviewers since 1.0.0)
     environment:
       name: thunderstore
       url: https://thunderstore.io/c/nine-sols/p/diegorv/NineSolsQoL/

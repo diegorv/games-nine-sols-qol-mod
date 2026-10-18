@@ -15,8 +15,9 @@ A tag `vMAJOR.MINOR.PATCH` pushed to GitHub runs `.github/workflows/build.yml`:
    zip and the DLL.
 2. **release**: the GitHub release "NineSolsQoL x.y.z", with the notes, install instructions, the checksums and
    the zip, DLL and checksum files attached.
-3. **thunderstore**: waits for approval in the `thunderstore` environment, then `tcli publish` uploads the same
-   zip. Approve only after checking the GitHub release: a Thunderstore version can never be changed.
+3. **thunderstore**: `tcli publish` uploads the same zip, with the `TCLI_AUTH_TOKEN` secret of the `thunderstore`
+   environment. It runs on its own (the environment's required reviewers were removed after 1.0.0), so a tag is a
+   release: a Thunderstore version can never be changed.
 
 Commit subjects become the changelog: write them for players ("Add X: what it does", "Fix Y when Z").
 
@@ -37,7 +38,7 @@ Commit subjects become the changelog: write them for players ("Add X: what it do
       create the team `diegorv`.
 - [ ] Thunderstore: in the team's settings, **Service accounts** → add one (e.g. `github-actions`) and copy its
       token (shown once).
-- [ ] GitHub repo → Settings → **Environments** → New environment `thunderstore` → **Required reviewers**: me.
+- [ ] GitHub repo → Settings → **Environments** → New environment `thunderstore`, no required reviewers.
       In that environment, add the secret `TCLI_AUTH_TOKEN` with the service account token.
 - [ ] Push `main` and check that the build passes.
 
@@ -67,7 +68,6 @@ git push origin main v1.0.0
 ```
 
 - [ ] The workflow's **build** and **release** jobs pass; the GitHub release has the notes, checksums and files.
-- [ ] Approve the **thunderstore** job (Actions → the run → Review deployments).
 - [ ] Package page: icon, README, changelog, description in the list, category, the three dependencies.
 - [ ] Install it from r2modman's Online tab on a clean profile once.
 
