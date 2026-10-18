@@ -55,10 +55,10 @@ internal static class EarlyTeleportFeature {
     public static bool UnlockButton(GameFlagPropertyCondition condition) {
         try {
             // The Teleport button also has an inverted one ("not in the final stage") that must stay as it is
-            if (!Enabled.Value || condition.FinalResultInverted || !GameCore.IsAvailable()) return false;
-            var core = GameCore.Instance;
-            if (core.savePanelUiController == null || !TeleportMenus.IsOnTeleportButton(condition, core) ||
-                !TeleportMenus.TabMenuAvailable()) {
+            if (!Enabled.Value || condition.FinalResultInverted) return false;
+            var core = GameAccess.CoreInLevel();
+            if (core == null || core.savePanelUiController == null ||
+                !TeleportMenus.IsOnTeleportButton(condition, core) || !TeleportMenus.TabMenuAvailable()) {
                 return false;
             }
             // Only the unlock flag: a field of the teleport ability itself, read as it is (seen in game: its

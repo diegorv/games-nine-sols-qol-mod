@@ -37,8 +37,9 @@ internal static class TeleportFromAnyNodeFeature {
     public static bool ShowTeleport(TeleportPointMatchSavePanelCondition condition) {
         try {
             // Making an inverted one pass would hide what it guards (the Pavilion button has one)
-            if (!Enabled.Value || condition.FinalResultInverted || !GameCore.IsAvailable()) return false;
-            var core = GameCore.Instance;
+            if (!Enabled.Value || condition.FinalResultInverted) return false;
+            var core = GameAccess.CoreInLevel();
+            if (core == null) return false;
             var points = core.allTeleportPoints;
             if (core.savePanelUiController == null || points == null ||
                 condition.bindedTeleportPointData != points.AGSavePoint) {
@@ -68,8 +69,9 @@ internal static class TeleportFromAnyNodeFeature {
     // Last Node (TeleportPointCollection.isValidLastSavedFlag).
     public static void RememberNodeLeft() {
         try {
-            if (!Enabled.Value || !GameCore.IsAvailable()) return;
-            var core = GameCore.Instance;
+            if (!Enabled.Value) return;
+            var core = GameAccess.CoreInLevel();
+            if (core == null) return;
             var points = core.allTeleportPoints;
             var node = core.savePanelUiController != null ? TeleportMenus.SittingNode(core) : null;
             if (node == null || points == null || node == points.AGSavePoint) return;

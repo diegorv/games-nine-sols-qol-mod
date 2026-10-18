@@ -141,8 +141,9 @@ internal static class JinMultipliersFeature {
 
     // The player's Jin, as opposed to another currency a shop may trade in
     private static bool IsGold(ScriptableDataFloat? flag) {
-        if (flag == null || !GameCore.IsAvailable()) return false;
-        var data = GameCore.Instance.playerGameData;
+        var core = flag != null ? GameAccess.CoreInLevel() : null;
+        if (core == null) return false;
+        var data = core.playerGameData;
         return data != null && ReferenceEquals(flag, data.goldField);
     }
 
