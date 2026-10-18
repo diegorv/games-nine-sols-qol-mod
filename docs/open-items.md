@@ -4,7 +4,6 @@ Every planned feature is done. Next: the first release, unless I ask for a new f
 
 ## Release
 
-- Our own `thunderstore/icon.png` (the template's placeholder is still there).
 - The rest of the first release: `docs/thunderstore-upload.md`.
 
 ## Not seen in game yet

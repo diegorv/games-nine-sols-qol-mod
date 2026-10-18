@@ -80,8 +80,7 @@ new tag), not a changed one.
 - [x] `thunderstore.toml`: namespace, description (at most 250 characters), websiteUrl, BepInExPack `5.4.2305`
       (the version we tested on), category.
 - [x] `thunderstore/README.md`: what it does in the first lines, compatibility, credits.
-- [ ] `thunderstore/icon.png`: our own icon, exactly 256x256 PNG, readable at small size. Today it is the
-      template's placeholder.
+- [x] `thunderstore/icon.png`: our own icon (a jade talisman with 九 and QoL; source in `icon.svg`), 256x256 PNG.
 
 ## Rejection causes
 
