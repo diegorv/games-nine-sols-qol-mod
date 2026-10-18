@@ -6,6 +6,7 @@ using BepInEx.Bootstrap;
 using HarmonyLib;
 using NineSolsQoL.Core;
 using NineSolsQoL.Features.AnyDirectionParry;
+using NineSolsQoL.Features.HPNumbers;
 using NineSolsQoL.Features.JinMultipliers;
 using NineSolsQoL.Features.NoDeathPenalty;
 using NineSolsQoL.Features.ParryWindow;
@@ -34,6 +35,7 @@ public class Plugin : BaseUnityPlugin {
         JinMultipliersFeature.Init(Config);
         PickupFeature.Init(Config);
         NoDeathPenaltyFeature.Init(Config);
+        HPNumbersFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -56,31 +58,43 @@ public class Plugin : BaseUnityPlugin {
         Patch("Pickup", typeof(PickupPatches), "nozwock.FarawayPickup");
         Patch("NoDeathPenalty", new[] { typeof(NoDeathPenaltyPatches), typeof(NoDeathPenaltyTranspiler) },
             "nozwock.NoDeathPenalty");
+        // Patches nothing: it only draws numbers
+        HPNumbersFeature.Active = !IsReplaced("HPNumbers", "HPNumbers");
     }
 
     private void Update() {
         DebugTools.Update();
     }
 
+    private void LateUpdate() {
+        HPNumbersFeature.LateUpdate();
+    }
+
     private void OnDestroy() {
-        // A ScriptEngine reload creates a new instance: undo the patches so they are not applied twice
+        // A ScriptEngine reload creates a new instance: undo the patches so they are not applied twice,
+        // and remove what the mod draws
         foreach (var harmony in harmonies) harmony.UnpatchSelf();
+        HPNumbersFeature.Destroy();
         Log.Info($"{MyPluginInfo.PLUGIN_NAME} unloaded");
+    }
+
+    // Whether one of the mods a feature replaces (by GUID) is loaded: then the feature stays off, so
+    // the game does not get the same change twice
+    private static bool IsReplaced(string feature, params string[] replacedMods) {
+        var loaded = replacedMods.FirstOrDefault(Chainloader.PluginInfos.ContainsKey);
+        if (loaded == null) return false;
+        Log.Warning($"{feature} is off because {loaded} is loaded and does the same");
+        return true;
     }
 
     private void Patch(string feature, Type patches, params string[] replacedMods) =>
         Patch(feature, new[] { patches }, replacedMods);
 
-    // Applies one feature's [HarmonyPatch] classes, unless one of the mods it replaces (by GUID) is
-    // loaded: then the feature stays off so the game is not patched twice for the same thing.
+    // Applies one feature's [HarmonyPatch] classes, unless the feature is replaced (IsReplaced).
     // Harmony only looks at the methods declared in each class, not at nested classes. The classes
     // share one Harmony instance, so a failure in any of them undoes all of them.
     private void Patch(string feature, Type[] patches, params string[] replacedMods) {
-        var loaded = replacedMods.FirstOrDefault(Chainloader.PluginInfos.ContainsKey);
-        if (loaded != null) {
-            Log.Warning($"{feature} is off because {loaded} is loaded and does the same");
-            return;
-        }
+        if (IsReplaced(feature, replacedMods)) return;
 
         var harmony = new Harmony($"{MyPluginInfo.PLUGIN_GUID}.{feature}");
         harmonies.Add(harmony);

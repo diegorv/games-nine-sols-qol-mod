@@ -13,7 +13,7 @@ can be turned off. Work in progress. The player-facing description is in
 | AnyDirectionParry | Parry regardless of which way Yi is facing | done | Supidowagon's AnyDirectionParry |
 | JinMultipliers | Multipliers for Jin drops, Transmute Unto Wealth and selling (recycling) | done | Ixrec's JinMultiplier |
 | Pickup | Loose drops fly to you from any distance | done | nozwock's FarawayPickup |
-| HPNumbers | Yi's and the boss's HP and internal injury as numbers | planned | MicheliniDev's HPNumbers |
+| HPNumbers | The boss's HP (and, if you want, its internal injury) as numbers | done | MicheliniDev's HPNumbers |
 | NoDeathPenalty | Never lose Jin or XP on death; the death bag still appears, empty | done | nozwock's NoDeathPenalty |
 | Teleport | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
 | AirDash | One dash in the air per jump, recharged by touching ground, walls and the like | planned | original |
@@ -39,6 +39,8 @@ Source/
     AnyDirectionParry/
       AnyDirectionParryFeature.cs   [AnyDirectionParry] config, the player-only override, dump section
       AnyDirectionParryPatches.cs   postfix on the facing check that runs before a parry
+    HPNumbers/
+      HPNumbersFeature.cs    [HPNumbers] config, the numbers' own canvas, read every frame; no patches
     JinMultipliers/
       JinMultipliersFeature.cs  [JinMultipliers] config, the multiplied amounts, shop price, dump section
       JinMultipliersPatches.cs  AddGold prefix, shop trade and shop row postfixes
@@ -69,7 +71,8 @@ feature replaces is loaded (then the feature stays off and the log says why). Ha
 declared in the `<Name>Patches` class itself, so patches must not go in nested classes. A patch whose target is
 found by code (`[HarmonyTargetMethod]`, e.g. the state machine of an async method) needs a class of its own,
 because HarmonyX refuses it next to patches that name their target; `Plugin.Start` applies all of a feature's
-classes with its one Harmony instance.
+classes with its one Harmony instance. A feature that patches nothing (HPNumbers) gets the same check for the
+mod it replaces (`IsReplaced`) and runs from `Plugin.LateUpdate`.
 
 Every option is in the in-game config menu ([ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager),
 `F1`): one section per feature with `Enabled` first, a description that says the vanilla value, a range for
@@ -126,7 +129,7 @@ Mods whose ideas these features build on:
 | [AnyDirectionParry](https://github.com/supidowagon/parrymodifiers) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Supidowagon/AnyDirectionParry/)) | Supidowagon | MIT | AnyDirectionParry (the idea and the patch point, `EffectDealer.FacingRuleCheck`; ours is always player-only) |
 | [JinMultiplier](https://github.com/Ixrec/NineSolsJinMultiplier) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/)) | Ixrec | MIT | JinMultipliers (the idea and the patch points, `AddGold` and the shop's gold income; ours only multiplies sales and shows the real amount in the shop) |
 | [FarawayPickup](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/FarawayPickup/)) | nozwock | GPL-3.0 | Pickup (idea only; ours starts the game's own touch-pickup flight and leaves no field changed on pooled drops) |
-| [HPNumbers](https://github.com/MicheliniDev/NineSols-HPNumbersMod) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/MicheliniDev/HPNumbers/)) | MicheliniDev | MIT | HPNumbers |
+| [HPNumbers](https://github.com/MicheliniDev/NineSols-HPNumbersMod) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/MicheliniDev/HPNumbers/)) | MicheliniDev | MIT | HPNumbers (the idea and its approach, numbers on a canvas of our own read every frame; ours follows the game's boss bar and hides with the game's HUD) |
 | [NoDeathPenalty](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/)) | nozwock | GPL-3.0 | NoDeathPenalty (idea only; ours decides at each death, so it can be turned off at any time, and never empties an older bag) |
 | [NoDeathPenaltyNineSols](https://github.com/Baiker000/NoDeathPenaltyNineSols), the original nozwock's version builds on | Baiker000 | none stated | NoDeathPenalty (idea only) |
 | [TeleportFromAnyNode](https://github.com/nozwock/nine-sols-mods) | nozwock | GPL-3.0 | Teleport (idea only) |

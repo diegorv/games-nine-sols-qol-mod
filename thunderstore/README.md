@@ -18,6 +18,13 @@ with it), unless No death penalty is on.
 You keep your Jin and XP when you die. The death bag still appears as usual (or is carried by the enemy that
 killed you), but empty: you can still pick it up, for the skills that react to that.
 
+## HP numbers
+
+The boss's HP as a number while the game shows the boss bar, and its internal injury too if you turn on
+`BossInternalHP`. Each number has its position, font size and colour in the config (positions are in pixels
+of a 1920x1080 screen and scale with other resolutions). The numbers hide with the game's HUD: menus, the map,
+dialogues and cutscenes.
+
 ## Parry window
 
 A perfect parry is easier to land: by default you can press parry up to 12 frames (200 ms) before a hit

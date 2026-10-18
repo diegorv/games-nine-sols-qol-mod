@@ -57,8 +57,8 @@ Every feature so far went through this and passed its in-game test on the first 
 10. Keep `README.md` (features table, code layout, credits) and `thunderstore/README.md` (player-facing) up to
     date. Mark a feature `done` after my in-game test.
 
-**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 15 Opus
-and 37 Haiku were unused after NoDeathPenalty). Use Opus for discovery and adversarial review, Haiku for checking
+**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 14 Opus
+and 36 Haiku were unused after HPNumbers). Use Opus for discovery and adversarial review, Haiku for checking
 citations, completeness, runtime APIs and game facts. When I allow multi-agent orchestration, run discovery
 and review as Workflow scripts (pipeline: discovery agent → its verifiers in parallel; review: Opus + Haikus in
 parallel). Their results are files in `research/` or structured output, so your context stays small.
@@ -165,6 +165,7 @@ Source/
     JinMultipliers/          JinMultipliersFeature, JinMultipliersPatches (AddGold prefix, Trade/UpdateView postfixes)
     Pickup/                  PickupFeature, PickupPatches (DropItem.Update prefix)
     NoDeathPenalty/          NoDeathPenaltyFeature, NoDeathPenaltyPatches (bag prefix/postfix), NoDeathPenaltyTranspiler
+    HPNumbers/               HPNumbersFeature, HPNumber (own overlay canvas, read in LateUpdate; no patches)
 ```
 
 Conventions (keep them):
@@ -181,6 +182,8 @@ Conventions (keep them):
   class of its own: HarmonyX's `PatchClassProcessor.BulkPatch` throws "You cannot combine TargetMethod, TargetMethods
   or [HarmonyPatchAll] with individual annotations". Pass a feature's classes together,
   `Patch("<Name>", new[] { typeof(A), typeof(B) }, ...)`: one Harmony instance, all or nothing.
+- A feature that patches nothing (HPNumbers) gets `Active = !IsReplaced("<Name>", "<original GUID>")` in
+  `Plugin.Start`, runs from `Plugin.LateUpdate` and destroys what it created in `Plugin.OnDestroy`.
 - Config: `Enabled` first, a description that states the vanilla value and what changes, numbers with
   `AcceptableValueRange` (slider), everything read at call time so F1 changes apply live. Debug entries are
   `advanced`.
@@ -208,6 +211,7 @@ Conventions (keep them):
 | JinMultipliers | `Enabled`, `MonsterDrops`, `TransmuteUntoWealth`, `Selling` (1-1000, default 1; mine 100/200/100) | `AddGold` prefix multiplies Monster/Chest coins and FooExplode; `MerchandiseData.Trade` postfix adds the rest for sales (type 販賣 with a `mainMaterial`, paid in the gold field); `MerchandiseItemButton.UpdateView` postfix shows the multiplied price. Death bag and purchases untouched. |
 | Pickup | `Enabled`, `Delay` (0-3 s, default 0.5) | `DropItem.Update` prefix starts the game's own flight (`ForceFlyToTargetTurnOffSolid`, `flyToTarget = CenterAnchor`, `FlyToPicker`) for value drops (`AbstractDropping` or `DropArrow`) with touch pickup; timer = the game's `_forceFlyToPlayerCounter`; no flights while loading or dead; flying drops wait in the air while Yi is dead. All loose drops, like FarawayPickup (my choice). |
 | NoDeathPenalty | `Enabled` | Transpiler on the async `PlayerDeathPenalty`'s `MoveNext` (found through `AsyncStateMachineAttribute`) points its two `CurrentGold = 0` / `CurrentExp = 0` calls at helpers that skip them when the death decided to keep; the rest of the penalty (delay, deathCount, AutoSave, ResetDeathPenalty) stays vanilla. Prefix + postfix on `PlayerDeadRecord.StorePlayerDataBeforeDead` take the decision at death (`Enabled` and the transpiler matched, kept in a static until the penalty) and empty the bag only when the game stored a new one (`CanStoreDeadRecord`). Bag still spawns, empty, no option (my choice). |
+| HPNumbers | `Enabled`; `BossHP` (on) and `BossInternalHP` (off), each with `Position` (pixels of a 1920x1080 screen, left end of the number), `FontSize` (8-72, 19), `Color` | Like MicheliniDev's HPNumbers: TMP texts on a canvas of our own (ScreenSpaceOverlay + CanvasScaler 1920x1080, registered in RCGLifeCycle, destroyed on unload), read in `LateUpdate`, text rebuilt only when the int changes. The boss is the one whose bar the game shows (`monsterHpUI.CurrentBossHP.bindingPosture`: `GetPostureValue()`, `InternalInjury`); everything hides with the HUD (`playerInGameUIDisplayVote.Result`). No Yi numbers and current value only (my choice). Off when `HPNumbers` (the original's GUID) is loaded. |
 
 TrueDamage was **dropped** (it makes the game harder); its report stays in `research/truedamage.md`.
 
@@ -300,6 +304,18 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
   every pooled drop; a drop flying at that moment loses its value (the game logs "When DropItem destroyed and
   absorbed?").
 
+**HUD**
+- The boss bar: `GameCore.monsterHpUI` (`UIMonsterHPManager`) keeps a private `bossHPList`; `CurrentBossHP` is its
+  first entry (null when no bar shows); `UIBossHP.bindingPosture` is public. The bar draws `GetPostureValue()` (int)
+  and `RemainTotal = GetPostureValue() + InternalInjury`. `DestroyBossHealth` removes the bar from the list at once
+  (it only plays an Exit animation); `BossArea.localBossHP` bars bypass the list (whether any scene uses one:
+  UNCONFIRMED).
+- The HUD shows while `UIManager.playerInGameUIDisplayVote.Result` (public `RuntimeConditionVote`) is true: an AND
+  of the gameplay input state (votes false on pause, map, dialogue, cutscene, death, loading), the "show gameplay
+  UI" setting, the area name banner and a few scripted scenes. HPNumbers hides with it (seen in game).
+- Back to title destroys every GameObject not registered with `RCGLifeCycle.DontDestroyForever` (which registers
+  the object and the children it has at that moment).
+
 **Config menu and runtime**
 - ConfigurationManager 18.3.1 finds `ConfigurationManagerAttributes` by type name, copies `Order`/`IsAdvanced`
   by field name, sorts by Order descending.
@@ -315,36 +331,7 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 
 ## What comes next
 
-Suggested order: HPNumbers → Teleport → AirDash → HealSpeed (ask me; I may reorder).
-
-### HPNumbers (research: `research/hpnumbers.md`)
-
-Yi's HP and internal injury, and the boss's HP and internal injury, as numbers next to the bars; position, font
-size and color in F1. Replaces MicheliniDev's HPNumbers v2.0.0 (decompile it from
-`<profile>\BepInEx\plugins\MicheliniDev-HPNumbers\HPNumbers.dll.old` if needed). My v2 config: `YiHPPosition
-(0,0)`, `YiHPFontSize 19`, `YiHPColor FFFFFFFF`, `YiInternalHPPosition (0,0)`, `YiInternalHPFontSize 19`,
-`YiInternalHPColor FFFFFFFF`, `BossHPPosition (1050,86)`, `BossHPFontSize 19`, `BossHPColor FFFFFFFF`,
-`BossInternalHPPosition (0,0)`, `BossInternalHPFontSize 19`, `BossInternalHPColor 80FFFFFF`.
-
-What the research found:
-- In v2, (0,0) is the bottom-left screen corner (it draws on NineSolsAPI's overlay canvas in screen pixels, no
-  CanvasScaler), i.e. effectively off-screen, not a default: I only really used the boss HP number.
-  `80FFFFFF` is RGBA cyan, not alpha.
-- Yi's bar is `UIHealthBar` (prefab only): it draws `health.percentage` and `recoverablePercentage` =
-  `(current + CurrentInternalInjury) / max`. The boss bar: `GameCore.monsterHpUI` (`UIMonsterHPManager`) keeps a
-  private `bossHPList`; `CurrentBossHP` is its first entry; `UIBossHP.bindingPosture` is public; the game
-  truncates posture values (`GetPostureValue()` int).
-- "Bar shown" is `bossHPList` membership (plus `TempHide` during phase changes); `DestroyBossHealth` only plays an
-  Exit animation. `BossArea.localBossHP` bars bypass the list (whether any scene uses one: UNCONFIRMED).
-- Events are incomplete; the game's bars poll every frame, so poll in LateUpdate and reformat only when the int
-  changes.
-- Attaching texts under the HUD: they survive unpatching (clean them up by name), the player HUD fades
-  `SpriteRendererRCGExt` children only, and back-to-title destroys objects not registered in RCGLifeCycle, so
-  create them lazily and Unity-null-check. An overlay canvas would draw over menus and needs its own scaler.
-- v2 bugs: `MonsterManager.Instance` every frame without IsAvailable, per-frame allocations, fixed pixel
-  positions, the boss picked independently of the game's bar, numbers visible over menus.
-- The HUD prefab hierarchy (Canvas ancestor, scaler, layout groups) is UNCONFIRMED: check it with an F9 dump
-  section or UnityExplorer before choosing between "attach to the bars" and "own overlay canvas".
+Suggested order: Teleport → AirDash → HealSpeed (ask me; I may reorder).
 
 ### Teleport (research: `research/teleport.md`)
 
@@ -382,6 +369,12 @@ What the research found:
   if by timers, scale the timers and check the animation is not cut.
 - Both reports are verified: `research/<feature>.verify-a.md` and `.verify-c.md`, summed up in
   `research/verification-summary-airdash-healspeed.md`.
+- HealSpeed: I saw the **Quick Dose Jade** in the game (it speeds up healing); look at it first. The research
+  already found the mechanism (`research/healspeed.md` [C27]): `PlayerDrinkPotionState.OnStateEnter` sets
+  `player.animator.speed = 1.66666f` when the state's own `SpeedUpHealJade` wrapper is active (heal in about
+  0.6 of the time); `PlayerMainAbilityCollection.SpeedUpHealJade` is never read. That this wrapper is the "Quick
+  Dose" jade is UNCONFIRMED (prefab): check with the jade equipped. The surgical option uses the same mechanism:
+  a postfix on `OnStateEnter` multiplying the speed vanilla just wrote, so it stacks with the jade.
 
 ---
 
@@ -394,6 +387,9 @@ What the research found:
   release polish.
 - JinMultipliers: Transmute Unto Wealth and selling not yet seen in the log (`[jin] Transmute Unto Wealth`,
   `[jin] sold`; `is not a sale` would mean the 3D printer uses another trade type).
+- The game froze once during the HPNumbers session (2026-10-17) and had to be restarted. Cause unknown: the restart
+  overwrote `LogOutput.log` (`[Logging.Disk] AppendLog = false` in `BepInEx.cfg`) and the game no longer writes
+  Unity's `Player.log`. If it happens again, copy the log before reopening the game (or turn `AppendLog` on).
 - NoDeathPenalty: picking up an empty bag with the Life Recovery or Azure Recovery skill is not tested yet (I don't
   have them). Their effects live in prefab FSMs; nothing in code reads the bag's contents, so they should still
   trigger.
