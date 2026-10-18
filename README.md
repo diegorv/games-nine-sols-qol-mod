@@ -11,6 +11,14 @@ it is on [Thunderstore](https://thunderstore.io/c/nine-sols/p/diegorv/NineSolsQo
 > Every change goes through the same process: the game's decompiled code is read first (the claims cite
 > `file:line`), the patch is the smallest one that does the job, it is reviewed, and it is tested in game.
 
+## Install
+
+With r2modman or the Thunderstore Mod Manager: **[NineSolsQoL on Thunderstore](https://thunderstore.io/c/nine-sols/p/diegorv/NineSolsQoL/)**.
+By hand: the zip from the [latest release](https://github.com/diegorv/games-nine-sols-qol-mod/releases/latest)
+(with r2modman's **Import local mod**, or its files in `BepInEx/plugins/NineSolsQoL/`, plus
+[BepInExPack](https://thunderstore.io/c/nine-sols/p/BepInEx/BepInExPack/) and
+[ConfigurationManager](https://thunderstore.io/c/nine-sols/p/ninesolsmodding/BepinExConfigurationManager/)).
+
 ## Features
 
 Grouped as in the in-game menu (F1).
