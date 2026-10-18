@@ -17,7 +17,7 @@ can be turned off. Work in progress. The player-facing description is in
 | NoDeathPenalty | Never lose Jin or XP on death; the death bag still appears, empty | done | nozwock's NoDeathPenalty |
 | Teleport | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
 | AirDash | The game's own air dash (one per jump) before its upgrade; off by default | done | original |
-| HealSpeed | Healing with the pipe takes less time (multiplier) | planned | original |
+| HealSpeed | Heal with the pipe as fast as with the Quick Dose jade, without the jade | done | original |
 
 Every feature is our own implementation, written from the game's code. Ideas taken from other mods are credited
 below.
@@ -42,6 +42,9 @@ Source/
     AnyDirectionParry/
       AnyDirectionParryFeature.cs   [AnyDirectionParry] config, the player-only override, dump section
       AnyDirectionParryPatches.cs   postfix on the facing check that runs before a parry
+    HealSpeed/
+      HealSpeedFeature.cs    [HealSpeed] config, the jade check the heal reads instead, dump section
+      HealSpeedPatches.cs    transpiler: the heal asks the mod whether to play at the Quick Dose jade's speed
     HPNumbers/
       HPNumbersFeature.cs    [HPNumbers] config, the numbers' own canvas, read every frame; no patches
     JinMultipliers/

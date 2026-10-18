@@ -7,6 +7,7 @@ using HarmonyLib;
 using NineSolsQoL.Core;
 using NineSolsQoL.Features.AirDash;
 using NineSolsQoL.Features.AnyDirectionParry;
+using NineSolsQoL.Features.HealSpeed;
 using NineSolsQoL.Features.HPNumbers;
 using NineSolsQoL.Features.JinMultipliers;
 using NineSolsQoL.Features.NoDeathPenalty;
@@ -38,6 +39,7 @@ public class Plugin : BaseUnityPlugin {
         NoDeathPenaltyFeature.Init(Config);
         HPNumbersFeature.Init(Config);
         AirDashFeature.Init(Config);
+        HealSpeedFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -61,6 +63,7 @@ public class Plugin : BaseUnityPlugin {
         Patch("NoDeathPenalty", new[] { typeof(NoDeathPenaltyPatches), typeof(NoDeathPenaltyTranspiler) },
             "nozwock.NoDeathPenalty");
         Patch("AirDash", typeof(AirDashPatches));
+        Patch("HealSpeed", typeof(HealSpeedPatches));
         // Patches nothing: it only draws numbers
         HPNumbersFeature.Active = !IsReplaced("HPNumbers", "HPNumbers");
     }

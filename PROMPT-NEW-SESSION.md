@@ -167,6 +167,7 @@ Source/
     NoDeathPenalty/          NoDeathPenaltyFeature, NoDeathPenaltyPatches (bag prefix/postfix), NoDeathPenaltyTranspiler
     HPNumbers/               HPNumbersFeature, HPNumber (own overlay canvas, read in LateUpdate; no patches)
     AirDash/                 AirDashFeature, AirDashPatches (Player.DodgeCheck transpiler)
+    HealSpeed/               HealSpeedFeature, HealSpeedPatches (PlayerDrinkPotionState.OnStateEnter transpiler)
 ```
 
 Conventions (keep them):
@@ -214,6 +215,7 @@ Conventions (keep them):
 | NoDeathPenalty | `Enabled` | Transpiler on the async `PlayerDeathPenalty`'s `MoveNext` (found through `AsyncStateMachineAttribute`) points its two `CurrentGold = 0` / `CurrentExp = 0` calls at helpers that skip them when the death decided to keep; the rest of the penalty (delay, deathCount, AutoSave, ResetDeathPenalty) stays vanilla. Prefix + postfix on `PlayerDeadRecord.StorePlayerDataBeforeDead` take the decision at death (`Enabled` and the transpiler matched, kept in a static until the penalty) and empty the bag only when the game stored a new one (`CanStoreDeadRecord`). Bag still spawns, empty, no option (my choice). |
 | HPNumbers | `Enabled`; `BossHP` (on) and `BossInternalHP` (off), each with `Position` (pixels of a 1920x1080 screen, left end of the number), `FontSize` (8-72, 19), `Color` | Like MicheliniDev's HPNumbers: TMP texts on a canvas of our own (ScreenSpaceOverlay + CanvasScaler 1920x1080, registered in RCGLifeCycle, destroyed on unload), read in `LateUpdate`, text rebuilt only when the int changes. The boss is the one whose bar the game shows (`monsterHpUI.CurrentBossHP.bindingPosture`: `GetPostureValue()`, `InternalInjury`); everything hides with the HUD (`playerInGameUIDisplayVote.Result`). No Yi numbers and current value only (my choice). Off when `HPNumbers` (the original's GUID) is loaded. |
 | AirDash | `Enabled` (default **off**, my choice) | The game has its own air dash (one per air time: `CanRoll` needs `airDodgeCount == 0`, refilled by `ResetJumpAndDash`), gated by the `RollDodgeInAirUpgrade` ability, unlocked later in the game. A transpiler swaps the one `RollDodgeInAirUpgrade.IsActivated` read in `Player.DodgeCheck` (IL_0054/IL_0059) for `AirDashUnlocked(upgrade)` = the game's getter OR `Enabled`. The ability is never written (no save change; UI and skill tree still see it locked). `[air dash]` Debug line when the mod made the difference. |
+| HealSpeed | `Enabled` (default on) | Heal at the Quick Dose jade's speed without the jade (my choice; no multiplier, no stacking). `PlayerDrinkPotionState.OnStateEnter` sets `animator.speed = 1.66666f` when its private `isSpeedUpHeal` (`SpeedUpHealJade.IsActivated`) is true; a transpiler swaps that one call for `SpeedUpHeal(state)` = the jade's getter OR `Enabled`. The jade the state checks is `(Jade Data) Fast Pipe 速藥玉` (seen in game with F9). `[heal]` Debug line when the mod made the difference. |
 
 TrueDamage was **dropped** (it makes the game harder); its report stays in `research/truedamage.md`.
 
@@ -318,6 +320,18 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 - Back to title destroys every GameObject not registered with `RCGLifeCycle.DontDestroyForever` (which registers
   the object and the children it has at that moment).
 
+**Dash and heal**
+- The dash is the `Roll` state, entered only by `Player.DodgeCheck` (`CanRoll || CanDownDash`, `RollDodgeAbility`,
+  in the air `!IsWeak` and `RollDodgeInAirUpgrade`, `!IsInQTETutorial`). One air dash per air time:
+  `airDodgeCount` (raised in `PlayerRollState.OnStateEnter`, cleared only by `ResetJumpAndDash`, read only by
+  `CanRoll`). `ResetJumpAndDash` runs on landing (`VelY <= 0`), wall slide/run, ledge, rope, pile, grapple pass,
+  zipline, every parry, jump-kick bounce, weakness hit, talisman stick and respawn; it also refills double jump,
+  air attack, spin kick and the parry cooldown, so never call it to grant a dash. Each roll zeroes VelY and has no
+  gravity. `RollDodgeInAirUpgrade` is read in code only by `DodgeCheck` (and the `activate.airDash` console command).
+- Healing: `PlayerDrinkPotionState`; the heal happens at the "Heal" clip's `Done` animation event, and the Quick
+  Dose jade (`(Jade Data) Fast Pipe 速藥玉`, the state's own `SpeedUpHealJade` wrapper) only sets `animator.speed =
+  1.66666f` on enter (`OnStateExit` sets 1). `PlayerMainAbilityCollection.SpeedUpHealJade` is never read.
+
 **Config menu and runtime**
 - ConfigurationManager 18.3.1 finds `ConfigurationManagerAttributes` by type name, copies `Order`/`IsAdvanced`
   by field name, sorts by Order descending.
@@ -333,7 +347,7 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 
 ## What comes next
 
-Suggested order: HealSpeed (in progress) → Teleport (ask me; I may reorder).
+Only Teleport is left (then release polish, see Open items).
 
 ### Teleport (research: `research/teleport.md`)
 
@@ -359,20 +373,6 @@ What the research found:
   which still apply when teleporting only from Root Nodes that show the Pavilion button.
 - Original GUIDs: `nozwock.TeleportFromAnyNode`; Ixrec's `TeleportFromAnywhere` is an alternative (expected
   GUID `TeleportFromAnywhere`).
-
-### HealSpeed (my idea; research: `research/healspeed.md`, verified in `research/verification-summary-airdash-healspeed.md`)
-
-Decided with me: **heal with the pipe at the Quick Dose jade's speed without equipping it, on by default**; with
-the jade equipped the speed is the same (no stacking). I equipped the jade in game and found its speed good,
-so this replaces the multiplier planned before.
-
-- The game's mechanism (`research/healspeed.md` [C27]): `PlayerDrinkPotionState.OnStateEnter` does
-  `ldarg.0; call get_isSpeedUpHeal; brfalse` (IL_0016-IL_001C) and then `player.animator.speed = 1.66666f`; the
-  private getter is `this.SpeedUpHealJade.IsActivated` (a public `AbilityWrapper` struct field of the state:
-  `AbilityData && AbilityData.IsActivated`), called nowhere else. `OnStateExit` sets the speed back to 1. The heal
-  itself happens at the clip's `Done` animation event, so the whole animation simply plays faster.
-- Plan: the AirDash pattern, a transpiler swapping that one call for `SpeedUpHeal(state)` = the jade's getter OR
-  `Enabled`. F9 shows the wrapper's ability asset name (confirms it is the Quick Dose jade).
 
 ---
 

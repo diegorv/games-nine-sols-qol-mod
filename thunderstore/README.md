@@ -25,6 +25,11 @@ The boss's HP as a number while the game shows the boss bar, and its internal in
 of a 1920x1080 screen and scale with other resolutions). The numbers hide with the game's HUD: menus, the map,
 dialogues and cutscenes.
 
+## Heal speed
+
+Healing with the pipe is as fast as with the Quick Dose jade, without equipping it: the animation plays 1.67
+times faster, so a heal takes 60% of the time. With the jade equipped nothing changes.
+
 ## Air dash
 
 Off by default. The game gives Yi an air dash later on (one per jump, recharged when you land, touch a wall,
