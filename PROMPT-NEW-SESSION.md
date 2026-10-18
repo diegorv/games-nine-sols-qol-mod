@@ -18,6 +18,10 @@ current state of the mod, what was verified in the game code, and what comes nex
 - **Surgical patches.** Pick the option that changes the least game behaviour, at the known patch point (often the
   original mod's): e.g. swap two calls inside a method rather than skip or replace the whole method. Don't invent
   new mechanisms; a broader design only when the narrow one has a real blocker.
+- **Follow the original when it is simple.** If the mod a feature replaces already does it simply (HPNumbers:
+  texts on its own canvas), copy its approach and fix only its real bugs, instead of designing something new.
+- **Don't make me wait.** Run the reviews in the background while I test; commit after my test and apply the
+  review's real findings in a separate commit.
 - **One hypothesis at a time.** Change one thing, I test it in the game, you read the log.
 - **Instrument before fixing.** Logs and the F9 dump answer in minutes what guessing does not.
 - I test in the game. You read `LogOutput.log` directly from the profile (path below).
@@ -48,17 +52,19 @@ Every feature so far went through this and passed its in-game test on the first 
 6. **Implement**, build (the build hot-reloads the mod in the running game) and check the log for the reload
    (`unloaded` → `Registered ... in RCGLifeCycle` → `loaded` → `<Feature>: N game method(s) patched`) and for
    exceptions.
-7. **Review before I test**: 1 Opus agent does an adversarial review of the diff (it tries to find real bugs,
-   with quoted evidence), plus 1-2 Haiku agents check the library APIs against the runtime DLLs in the profile
-   and the game facts in the comments. Apply the fixes, build again.
-8. **Commit**, then tell me exactly what to test in a short numbered list and what the log should show.
+7. **Review while I test**: start the review as a background Workflow (1 Opus agent does an adversarial review
+   of the diff, trying to find real bugs with quoted evidence; 1-2 Haiku agents check the library APIs against
+   the runtime DLLs in the profile and the game facts in the comments) and at the same time tell me exactly what
+   to test, in a short numbered list, and what the log and F9 should show.
+8. **Commit** after my test (docs included, feature marked `done`); apply the review's real findings later in
+   their own commit ("Apply the <Feature> review findings"), build again, and tell me if anything needs a retest.
 9. **When the answer lives in game data**, add a diagnostic (F9 dump section, counters, a Log.Debug line) and
    ask me for one concrete action. Remove one-off diagnostics once they answered their question.
 10. Keep `README.md` (features table, code layout, credits) and `thunderstore/README.md` (player-facing) up to
     date. Mark a feature `done` after my in-game test.
 
-**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 14 Opus
-and 36 Haiku were unused after HPNumbers). Use Opus for discovery and adversarial review, Haiku for checking
+**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 12 Opus
+and 36 Haiku were unused after HealSpeed). Use Opus for discovery and adversarial review, Haiku for checking
 citations, completeness, runtime APIs and game facts. When I allow multi-agent orchestration, run discovery
 and review as Workflow scripts (pipeline: discovery agent → its verifiers in parallel; review: Opus + Haikus in
 parallel). Their results are files in `research/` or structured output, so your context stays small.
@@ -351,8 +357,24 @@ Only Teleport is left (then release polish, see Open items).
 
 ### Teleport (research: `research/teleport.md`)
 
-Teleport from any Root Node where the game shows the Pavilion button, and remember the node I left so "Last
-Node" brings me back.
+What I want: **teleport from any Root Node where the game shows the Pavilion button, and remember the node I
+left so "Last Node" brings me back.** Today the node list only works from the Pavilion (the game's hub), so a
+trip between two nodes means going through the Pavilion first.
+
+Where to start:
+- Read `research/teleport.md`, its checkers `research/teleport.verify-a.md` and `teleport.verify-b.md`, and the
+  "teleport" section of `research/verification-summary.md` (top risks, the originals' bugs, UNCONFIRMED list and
+  the checkers' missing references: other writers of `lastSaveTeleportPoint`/`SetReviveSavePoint`, the giant
+  elevator path, `TeleportUIButtonWithPermission`, tab-click re-evaluation).
+- The originals, to clone read-only into the scratchpad and compare (follow the simplest proven patch point):
+  nozwock's TeleportFromAnyNode (`github.com/nozwock/nine-sols-mods`, GPL-3.0: idea only, no code copied) and
+  Ixrec's TeleportFromAnywhere (`github.com/Ixrec/NineSolsTeleportFromAnywhere`, MIT; installed but disabled
+  in my profile as `.dll.old`).
+- The buttons' prefab wiring (which condition components sit on the Root Node "Teleport" button, the
+  "GoToAG" (Pavilion) button and the pause-menu "TeleportPanel Tab", and whether any is inverted) is
+  UNCONFIRMED and the design depends on it: get it first with a one-off F9 dump section (list the Root Node menu
+  buttons and the tab with their conditions, `FinalResultInverted` and active state) while I sit at a node,
+  or with UnityExplorer.
 
 What the research found:
 - `TeleportPointMatchSavePanelCondition.isValid` = `bindedTeleportPointData == savePanelUiController.CurrentSavePoint`,
@@ -404,13 +426,19 @@ What the research found:
   suspect: compare `[hitch]` lines and try `[Logging.Console] Enabled = false`.
 - History: commit `1712573` ("Remove old prompt") carries part of the Pickup code and does not build alone;
   `31a03bc` completes it.
+- Reviews still running when this handoff was written: HPNumbers (`8f49ab4`), AirDash (`2fbd23d`) and HealSpeed
+  (`9bd509c`); the three features passed their in-game tests. If `git log` has no "Apply the <Feature> review
+  findings" commit for one of them, run an adversarial review of that commit's diff before the release.
 - Release polish later: `DebugLogging` off by default, Thunderstore namespace/websiteUrl/icon, version,
   remove one-off dump lines.
 
 ## First steps for the new session
 
-1. Read this file, `README.md`, the code under `Source/` and `research/verification-summary.md`.
+1. Read this file, `README.md` and the code under `Source/` (the AirDash and HealSpeed transpilers are the
+   pattern to copy for "make one game check pass").
 2. Decompile the game into the session scratchpad (command above).
 3. Read the end of `LogOutput.log` to see where I left off, and `git log --oneline -10`.
-4. Ask me which feature is next (suggested: HPNumbers), read its report in `research/`, verify the key facts,
-   and propose the plan.
+4. Start **Teleport** (see "What comes next"): read its research and checkers, clone the two originals into the
+   scratchpad, verify the key facts yourself, and give me the synthesis in Portuguese. Then the F9 diagnostic for
+   the buttons' wiring (ask me to sit at a Root Node and press F9, and also F9 with the pause menu's teleport tab),
+   and only then the plan.
