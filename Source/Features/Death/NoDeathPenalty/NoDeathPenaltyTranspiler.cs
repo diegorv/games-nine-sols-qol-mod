@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
+using NineSolsQoL.Core;
 
 namespace NineSolsQoL.Features.Death.NoDeathPenalty;
 
@@ -35,30 +36,25 @@ internal static class NoDeathPenaltyTranspiler {
         // Harmony runs the transpiler again whenever the method is patched again (e.g. by another mod)
         NoDeathPenaltyFeature.Patched = false;
         var code = instructions.ToList();
+        const string off = "NoDeathPenalty is off";
         var setGold = AccessTools.PropertySetter(typeof(PlayerGamePlayData), nameof(PlayerGamePlayData.CurrentGold));
         var setExp = AccessTools.PropertySetter(typeof(PlayerGamePlayData), nameof(PlayerGamePlayData.CurrentExp));
-
-        var golds = new List<int>();
-        var exps = new List<int>();
-        for (var i = 1; i < code.Count; i++) {
-            if (!code[i - 1].LoadsConstant(0)) continue;
-            if (code[i].Calls(setGold)) golds.Add(i);
-            else if (code[i].Calls(setExp)) exps.Add(i);
-        }
-        if (golds.Count != 1 || exps.Count != 1) {
-            Log.Error($"NoDeathPenalty is off: found {golds.Count} zeroing(s) of Jin and {exps.Count} of " +
-                      "experience in PlayerDeathPenalty instead of 1 each, a game update probably changed it");
+        var keepGold = AccessTools.Method(typeof(NoDeathPenaltyFeature), nameof(NoDeathPenaltyFeature.SetGoldAtPenalty));
+        var keepExp = AccessTools.Method(typeof(NoDeathPenaltyFeature), nameof(NoDeathPenaltyFeature.SetExpAtPenalty));
+        if (!Transpile.Has(off, "PlayerGamePlayData.CurrentGold or CurrentExp", setGold, setExp, keepGold, keepExp)) {
             return code;
         }
 
+        var gold = Transpile.FindOne(code, (c, i) => i > 0 && c[i - 1].LoadsConstant(0) && c[i].Calls(setGold),
+            off, "zeroings of Jin", "PlayerDeathPenalty");
+        var exp = Transpile.FindOne(code, (c, i) => i > 0 && c[i - 1].LoadsConstant(0) && c[i].Calls(setExp),
+            off, "zeroings of experience", "PlayerDeathPenalty");
+        if (gold < 0 || exp < 0) return code;
+
         // A plain call (Calls also matches callvirt): the helpers are static, with the instance as their
         // first parameter
-        code[golds[0]].opcode = OpCodes.Call;
-        code[golds[0]].operand =
-            AccessTools.Method(typeof(NoDeathPenaltyFeature), nameof(NoDeathPenaltyFeature.SetGoldAtPenalty));
-        code[exps[0]].opcode = OpCodes.Call;
-        code[exps[0]].operand =
-            AccessTools.Method(typeof(NoDeathPenaltyFeature), nameof(NoDeathPenaltyFeature.SetExpAtPenalty));
+        Transpile.CallInstead(code[gold], keepGold);
+        Transpile.CallInstead(code[exp], keepExp);
         NoDeathPenaltyFeature.Patched = true;
         return code;
     }

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
 using HarmonyLib;
+using NineSolsQoL.Core;
 
 namespace NineSolsQoL.Features.Abilities.EarlyAirDash;
 
-// The only hook of the air dash feature
+// The only hook of EarlyAirDash
 [HarmonyPatch]
 internal static class EarlyAirDashPatches {
     // Player.DodgeCheck decides whether a dash may start (Player.cs:668-702 in the decompiled game).
@@ -22,23 +22,22 @@ internal static class EarlyAirDashPatches {
         // Harmony runs the transpiler again whenever DodgeCheck is patched again (e.g. by another mod)
         EarlyAirDashFeature.Patched = false;
         var code = instructions.ToList();
+        const string off = "EarlyAirDash is off";
         var upgrade = AccessTools.Field(typeof(PlayerMainAbilityCollection),
             nameof(PlayerMainAbilityCollection.RollDodgeInAirUpgrade));
         var isActivated = AccessTools.PropertyGetter(typeof(PlayerAbilityData), nameof(PlayerAbilityData.IsActivated));
-
-        var matches = new List<int>();
-        for (var i = 1; i < code.Count; i++) {
-            if (code[i - 1].LoadsField(upgrade) && code[i].Calls(isActivated)) matches.Add(i);
-        }
-        if (matches.Count != 1) {
-            Log.Error($"EarlyAirDash is off: found {matches.Count} checks of the air dash upgrade in Player.DodgeCheck " +
-                      "instead of 1, a game update probably changed it");
+        var helper = AccessTools.Method(typeof(EarlyAirDashFeature), nameof(EarlyAirDashFeature.AirDashUnlocked));
+        if (!Transpile.Has(off, "PlayerMainAbilityCollection.RollDodgeInAirUpgrade or PlayerAbilityData.IsActivated",
+                upgrade, isActivated, helper)) {
             return code;
         }
 
+        var check = Transpile.FindOne(code, (c, i) => i > 0 && c[i - 1].LoadsField(upgrade) && c[i].Calls(isActivated),
+            off, "checks of the air dash upgrade", "Player.DodgeCheck");
+        if (check < 0) return code;
+
         // A plain call: the helper is static and takes the ability the callvirt was made on
-        code[matches[0]].opcode = OpCodes.Call;
-        code[matches[0]].operand = AccessTools.Method(typeof(EarlyAirDashFeature), nameof(EarlyAirDashFeature.AirDashUnlocked));
+        Transpile.CallInstead(code[check], helper);
         EarlyAirDashFeature.Patched = true;
         return code;
     }
