@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NineSolsQoL.Features.Combat.ParryFromBehind;
 
-// The only hook of the any-direction parry feature
+// The only hook of ParryFromBehind
 [HarmonyPatch]
 internal static class ParryFromBehindPatches {
     // The game asks whether the player faces an attack before letting it be parried. Only a failed

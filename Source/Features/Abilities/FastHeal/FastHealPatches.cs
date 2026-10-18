@@ -5,7 +5,7 @@ using HarmonyLib;
 
 namespace NineSolsQoL.Features.Abilities.FastHeal;
 
-// The only hook of the heal speed feature
+// The only hook of FastHeal
 [HarmonyPatch]
 internal static class FastHealPatches {
     // PlayerDrinkPotionState.OnStateEnter (PlayerDrinkPotionState.cs:16-25 in the decompiled game) does
