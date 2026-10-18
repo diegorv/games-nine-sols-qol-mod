@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
 using NineSolsQoL.Core;
+using NineSolsQoL.Features.Death.NoDeathPenalty;
 using UnityEngine;
 
 namespace NineSolsQoL.Features.Loot.LootMagnet;
@@ -95,11 +96,13 @@ internal static class LootMagnetFeature {
 
     // While Yi is dead, a flying drop waits where it is. Jin it gave now would be wiped by the death
     // penalty (the death bag was filled when Yi died), and health would be thrown away. After the
-    // revive the game's Update resumes the chase.
+    // revive the game's Update resumes the chase. Coins still fly when NoDeathPenalty keeps this
+    // death's Jin: a revive that reloads the scene returns waiting drops to the pool uncredited.
     private static bool HoldWhileDead(DropItem item) {
         UpdatePlayer();
         var privates = GamePrivates.DropItems;
         if (!playerDead || privates == null) return false;
+        if (NoDeathPenaltyFeature.LastDeathKeepsJin && privates.Effect(item) is DropMoney) return false;
 
         // The body is kinematic during a flight: without this it would keep drifting
         var body = privates.Body(item);

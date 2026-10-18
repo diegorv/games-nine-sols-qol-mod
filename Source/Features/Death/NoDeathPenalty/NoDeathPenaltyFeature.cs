@@ -29,6 +29,9 @@ internal static class NoDeathPenaltyFeature {
     // while the bag is already empty (dev only).
     private static bool keepAtPenalty;
 
+    // For LootMagnet: whether the Jin Yi gets while dead survives this death's penalty
+    public static bool LastDeathKeepsJin => keepAtPenalty;
+
     public static void Init(ConfigFile config) {
         var section = new ConfigSection(config, "NoDeathPenalty", MenuCategory.Death, "No death penalty");
         Enabled = section.Bind("Enabled", true,
