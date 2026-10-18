@@ -29,18 +29,23 @@ feature.
 From the 2026-10-18 audit (`..\ninesols\research\audit\SUMMARY.md`), to check live with bepinex-mcp at each new boss
 (`search_gameobjects(component_name="PlayerWalkToTrigger" | "BossArea" | "PlayerTransformParentChangeTrigger")`):
 
-- respawn-1: ArenaTracker records any `PlayerWalkToTrigger`, cutscene ones included. Checked in `A2_S5_BossHorseman_Final`:
-  only the boss entrance is active (the Root Node horn and sleep pod cutscene triggers are inactive), and it fires
-  again on every attempt, so the Horseman is fine. Still to check: Jiequan (`A5_S1_JieChuanBattle` has a
-  `playerSensor`), Yi Gung, Jee, Goumang.
+- respawn-1, fixed after 1.1.1: the offline scan of all 117 scenes (`..\ninesols\research\scenescan\`) showed that
+  only the Horseman (`A2_S5`) and Goumang (`A3_S5`) scenes start their fight with an active `PlayerWalkToTrigger`
+  and have no `BossArea`; every `PlayerWalkToTrigger` in the ~25 `BossArea` scenes is a story cutscene. A boss
+  respawn now uses the `BossArea` when the scene has an active one, and a recorded entrance only otherwise (or
+  when it lies outside every boss area). Tested on the Horseman (unchanged); still to see at a `BossArea` boss:
+  the log line `(outside the boss area)` after a death there, even if a cutscene played in that scene before.
 - respawn-5: the game's scripted override respawn (`SaveManager.forceSaveFlag`) is not among the early-outs; matters
   only if a story sequence uses it.
 - abilities-hud-3: with two boss bars, BossHPNumbers follows only the first (read `UIMonsterHPManager.bossHPList`
   during a fight with two bosses).
-- Faster alternative for all bosses at once, no game or save involved: read the scenes offline (UnityPy on
-  `NineSols_Data\level*`) and list each arena's PlayerWalkToTrigger (active or not), BossArea and parent triggers.
-- respawn-2 (fixed in 1.1.0 with `ResetParent`): no `PlayerTransformParentChangeTrigger` in the Horseman scene; a
-  death on a lift elsewhere would confirm it.
+- Scene data offline: `..\ninesols\research\scenescan\scan.py` (UnityPy 1.25, ~2 min) reads every scene in
+  `NineSols_Data\data.unity3d` and lists each `PlayerWalkToTrigger`, `BossArea`, `PlayerTransformParentChangeTrigger`
+  and `PlayerSensor` with its path and active state, plus the boss scripts per scene (`all.json`). It cannot answer
+  what happens during a fight (two boss bars, `forceSaveFlag`).
+- respawn-2 (fixed in 1.1.0 with `ResetParent`): the game has only 6 `PlayerTransformParentChangeTrigger`, in
+  `A3_S1_GardenRuins_Final`, `A3_S3_OxygenChamber_Final` and `A4_SG3_MemoryCrate New`, none a boss scene; a death on
+  a lift there would confirm it.
 
 ## Possible improvements
 

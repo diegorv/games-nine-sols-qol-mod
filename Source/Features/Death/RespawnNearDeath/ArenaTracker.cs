@@ -9,14 +9,16 @@ namespace NineSolsQoL.Features.Death.RespawnNearDeath;
 
 // Where boss fights start, to respawn the player just outside the arena.
 //
-// Most boss fights start with a PlayerWalkToTrigger: a sensor area that, when the player steps in,
-// takes control, walks the player to a spot and starts the fight (BossLogic, Boss_SpearHorse_Logic,
-// BossGouMangLogic...). When one fires, the respawn point for that fight is picked: the newest safe
-// ground the player walked on before it, outside the trigger area. Spawning inside the area would
-// start the fight again right away.
+// Most boss arenas are a BossArea: the respawn point is the newest safe ground the player walked on
+// outside it. A few fights start with a PlayerWalkToTrigger instead (Boss_SpearHorse_Logic,
+// BossGouMangLogic): a sensor area that, when the player steps in, takes control, walks the player to
+// a spot and starts the fight. When one fires, the respawn point for that fight is picked: the newest
+// safe ground before it, outside the trigger area. Spawning inside either area would start the fight
+// again right away. Without either, the fallback is the spot where the player entered the scene.
 //
-// Some bosses mark their arena with a BossArea instead. Without either, the fallback is the spot
-// where the player entered the scene.
+// Seen in the scene data (all 117 scenes, 2026-10-18): only the two scenes without a BossArea have an
+// active PlayerWalkToTrigger at load; every one in a BossArea scene belongs to a story cutscene, so
+// one that fired there is not the fight's entrance and must not win over the BossArea.
 internal static class ArenaTracker {
     // Distance kept from the trigger and boss areas
     private const float Margin = 64f;
@@ -66,11 +68,6 @@ internal static class ArenaTracker {
     // Where to respawn after dying in a boss fight, relative to the level root
     public static Vector3? FindBossRespawn(GameCore core, out string how) {
         var scene = core.gameLevel.SceneName;
-        if (entranceRespawn.HasValue && entranceScene == scene) {
-            how = $"before the fight entrance '{entranceName}'";
-            return entranceRespawn;
-        }
-
         var origin = core.gameLevel.transform.position;
         var bossAreas = Object.FindObjectsOfType<BossArea>()
             .Select(area => area.GetComponent<Collider2D>())
@@ -83,6 +80,12 @@ internal static class ArenaTracker {
                 how = "outside the boss area";
                 return outside;
             }
+        }
+
+        // A recorded entrance, unless it would put the player inside an active boss area
+        if (entranceRespawn is { } entrance && entranceScene == scene && !bossAreas.Any(area => IsInside(area, entrance))) {
+            how = $"before the fight entrance '{entranceName}'";
+            return entrance;
         }
 
         if (SafeTrail.Scene == scene && SafeTrail.StartsAtEntrance && SafeTrail.Points.Count > 0) {

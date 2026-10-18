@@ -77,10 +77,11 @@ scene and spawn just outside the arena.
    revive never applies it), `FadeToBlack` → `ResetLevel(false)` (spawns the bag) → `RestoreEverything` →
    Normal → `SetPosition` → `ForceOnGround` → `SafeGroundRecorder.ForceSave(pos)` (the reset moved the last safe
    ground to the death spot) → camera → BGM → `FadeOutBlack`. Fallback: `RespawnAtSavePoint`.
-4. Boss death → `Respawner.ReloadSceneAt`: `ChangeScene` to the same scene at a level-relative point (newest
-   `SafeTrail` point outside the fight entrance + 64 margin, recorded when `PlayerWalkToTrigger` first fires;
-   fallbacks: outside active `BossArea`s, then the scene entrance); clears `GameCore._lastTeleportPoint` first.
-   Validated on Yingzhao many times.
+4. Boss death → `Respawner.ReloadSceneAt`: `ChangeScene` to the same scene at a level-relative point: the newest
+   `SafeTrail` point outside the active `BossArea`s + 64 margin, which most boss scenes use (their walk triggers are
+   all cutscenes); in a scene without one (Yingzhao, Goumang), outside the fight entrance, recorded when its
+   `PlayerWalkToTrigger` first fires; then the scene entrance. Clears `GameCore._lastTeleportPoint` first. Validated
+   on Yingzhao many times.
 5. Never patch `CanQuickRevive`/`FetchReviveData`: `FetchReviveData` sets `_lastTeleportPoint`, whose
    `OnSceneChangeDone` plays the Root Node revive animation that only an animation event ends: invisible player
    with no control away from the node.
