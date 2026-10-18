@@ -7,9 +7,9 @@ and more. Each one can be turned off in the config menu (F1), where they are gro
 > play the game the way I like: these are the tweaks I wanted. If you want more options, I suggest the
 > original mods listed under Credits, at the end: they do more than this one.
 
-Installing it also installs NineSolsAPI (which keeps the game from unloading the mods when it returns to the
-title screen; note that it turns achievements off by default, in its own config) and the BepInEx
-ConfigurationManager (the F1 menu).
+Installing it also installs the BepInEx ConfigurationManager (the F1 menu). It no longer needs NineSolsAPI, which
+1.0.0 installed with it: NineSolsAPI turns Steam achievements off by default (an option in its own config), so
+uninstall it if no other mod of yours needs it.
 
 ## Abilities
 

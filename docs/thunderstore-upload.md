@@ -55,7 +55,7 @@ Commit subjects become the changelog: write them for players ("Add X: what it do
       `icon.png`, `README.md` and `NineSolsQoL.dll` (plus `CHANGELOG.md` in CI).
 - [ ] Optional (skipped for 1.0.0, tested from Thunderstore instead): test that zip on a clean r2modman profile:
   - [ ] New profile (e.g. `Release test`), without ScriptEngine; Settings → **Import local mod** → the zip.
-        BepInExPack, NineSolsAPI and ConfigurationManager get installed with it (from Online if not).
+        BepInExPack and ConfigurationManager get installed with it (from Online if not).
   - [ ] The log shows the mod loaded and `<Feature>: N game method(s) patched` for each feature, with no errors
         from the mod.
   - [ ] `diegorv.NineSolsQoL.cfg` is created; F1 shows every group; a change applies right away.

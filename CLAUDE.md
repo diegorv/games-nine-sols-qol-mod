@@ -125,18 +125,22 @@ Paths to the game, the profile and the log are in `..\CLAUDE.md`; build and Scri
 - Runtime: BepInEx 5.4.23.5, HarmonyX 2.9.0 in `<profile>\BepInEx\core` (we compile against HarmonyX 2.7 from
   NuGet), ConfigurationManager 18.3.1. CI (`.github/workflows/build.yml`) builds against
   `nine-sols-modding/libs-stripped` (it has UniTask, Unity.TextMeshPro and UnityEngine.UI).
-- Installed in the profile (2026-10-18): BepInExPack, NineSolsAPI, ScriptEngine, ConfigurationManager. The
+- Installed in the dev profile (2026-10-18): BepInExPack, ScriptEngine, ConfigurationManager, UnityExplorer (an empty folder), the bepinex-mcp bridge (`scripts\BepInExMCP.dll`), and NineSolsAPI (disabled once `HideManagerGameObject = true` is tested). The
   originals our features replace are no longer installed. I play at 1920x1080.
 - I start the game from r2modman, load a save and press **F6 once**; after that every build hot-reloads the mod.
   Touching the DLL in `scripts` (`(Get-Item dll).LastWriteTime = Get-Date`) also reloads it, e.g. after editing
   the `.cfg` on disk (a new instance reads the file again).
 - A hot reload resets every static of the mod: e.g. reloading in the middle of a boss fight loses the fight
   entrance, and the next death uses the game's respawn. Dev-only.
-- **Keep NineSolsAPI installed**, even though the mod does not reference it: its Awake hides the BepInEx manager
-  GameObject (`hideFlags = 61`) and registers it with `RCGLifeCycle.DontDestroyForever` (`NineSolsAPICore.cs:64,
-  85` in 1.3.1). Without it the title screen destroys that object and F1 and F6 stop working (it happened on
-  2026-10-17). A reinstall of BepInEx also resets ScriptEngine's `EnableFileSystemWatcher`/`AutoReloadDelay` and
-  deletes our `.cfg`.
+- **NineSolsAPI is no longer a dependency** (after 1.0.0). The BepInEx manager object holds ConfigurationManager (F1)
+  and ScriptEngine (F6), and two things destroy it (seen in game on 2026-10-18): Unity at startup, right after the
+  chainloader, when the first scene loads (`DontDestroyOnLoad` does not hold yet), and the game's
+  `DestroyAllGameObjects` on a quit to the title screen. `Plugin.RegisterLifeCycle` sets `HideAndDontSave` on it and
+  registers it with `RCGLifeCycle.DontDestroyForever`, as NineSolsAPI's Awake did (`NineSolsAPICore.cs:64, 85` in
+  1.3.1, which also turns Steam achievements off by default). That covers a release install (tested: boot, F1,
+  quit to title, reload). Under ScriptEngine the mod loads only after F6, too late for the startup, so the dev
+  profile needs `HideManagerGameObject = true` in `BepInEx.cfg` (or NineSolsAPI). A reinstall of BepInEx also
+  resets ScriptEngine's `EnableFileSystemWatcher`/`AutoReloadDelay` and deletes our `.cfg`.
 - Keys: **F1** config menu, **F9** our dump, **F8** opens one of the game's own debug screens.
 - The game spams `Adding null Transform to TransformAccessArray` (vanilla). The log uses my system's decimal
   comma (`200,0 ms`). `[Logging.Disk] AppendLog = false`: a game restart overwrites the log, so copy it first

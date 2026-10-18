@@ -18,6 +18,7 @@ using NineSolsQoL.Features.Loot.JinMultipliers;
 using NineSolsQoL.Features.Loot.LootMagnet;
 using NineSolsQoL.Features.Travel.EarlyTeleport;
 using NineSolsQoL.Features.Travel.TeleportFromAnyNode;
+using UnityEngine;
 
 namespace NineSolsQoL;
 
@@ -168,16 +169,31 @@ public class Plugin : BaseUnityPlugin {
         Log.Debug($"{feature}: {harmony.GetPatchedMethods().Count()} game method(s) patched");
     }
 
-    // When going back to the title screen the game destroys every GameObject that is not
-    // registered in RCGLifeCycle (DestroyAllGameObjects). DontDestroyForever only adds the object
-    // to a static list, so it is safe to call from Awake. If it ever throws, the full exception
-    // goes to the log.
+    // Keeps the object the mod lives on, and BepInEx's manager object, alive. In a release install they
+    // are the same object, which also holds every other plugin (ConfigurationManager's F1 menu included);
+    // under ScriptEngine (dev) the mod lives on ScriptEngine's own object. This is what NineSolsAPI is
+    // usually installed for (NineSolsAPICore.Awake does the same two things).
     private void RegisterLifeCycle() {
+        Keep(gameObject);
+        var manager = Chainloader.ManagerObject;
+        if (manager != null && manager != gameObject) Keep(manager);
+    }
+
+    // Two things destroy it otherwise (seen in game, without NineSolsAPI):
+    //  - At startup, right after BepInEx loads the plugins, Unity destroys the manager object when the
+    //    first scene loads (DontDestroyOnLoad does not hold yet): HideAndDontSave keeps it, as BepInEx's
+    //    own HideManagerGameObject option would.
+    //  - When the player quits to the title screen, the game destroys every GameObject not registered in
+    //    RCGLifeCycle (DestroyAllGameObjects). DontDestroyForever only adds the object to a static list,
+    //    so it is safe to call from Awake.
+    // If either ever throws, the full exception goes to the log.
+    private static void Keep(GameObject target) {
         try {
-            RCGLifeCycle.DontDestroyForever(gameObject);
-            Log.Info($"Registered '{gameObject.name}' in RCGLifeCycle");
+            target.hideFlags = HideFlags.HideAndDontSave;
+            RCGLifeCycle.DontDestroyForever(target);
+            Log.Info($"Registered '{target.name}' in RCGLifeCycle");
         } catch (Exception e) {
-            Log.Error($"RCGLifeCycle.DontDestroyForever failed: {e}");
+            Log.Error($"Could not keep '{target.name}' alive: {e}");
         }
     }
 }
