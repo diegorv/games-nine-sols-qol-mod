@@ -20,7 +20,8 @@ Grouped as in the in-game menu (F1).
 | HUD | BossHPNumbers | The boss's HP (and, if you want, its internal injury) as numbers | done | MicheliniDev's HPNumbers |
 | Loot and Jin | LootMagnet | Loose drops fly to you from any distance | done | nozwock's FarawayPickup |
 | Loot and Jin | JinMultipliers | Multipliers for Jin drops, Transmute Unto Wealth and selling (recycling) | done | Ixrec's JinMultiplier |
-| Travel | TeleportFromAnyNode | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
+| Travel | TeleportFromAnyNode | Teleport from every Root Node that shows the Pavilion button, not just the Pavilion's; the node you leave becomes the Last Node | done | nozwock's TeleportFromAnyNode |
+| Travel | EarlyTeleport | The game's teleport before the story unlocks it; off by default | done | original |
 
 Every feature is our own implementation, written from the game's code. Ideas taken from other mods are credited
 below.
@@ -79,6 +80,14 @@ Source/
       JinMultipliers/
         JinMultipliersFeature.cs   [JinMultipliers] config, the multiplied amounts, shop price
         JinMultipliersPatches.cs   AddGold prefix, shop trade and shop row postfixes
+    Travel/
+      TeleportMenus.cs             the teleport menus' buttons, tab and conditions both Travel features work with
+      TeleportFromAnyNode/
+        TeleportFromAnyNodeFeature.cs  [TeleportFromAnyNode] config, when the Teleport may show, the Last Node
+        TeleportFromAnyNodePatches.cs  postfix on the "this Root Node is the Pavilion" check, prefix on the teleport
+      EarlyTeleport/
+        EarlyTeleportFeature.cs    [EarlyTeleport] config, the unlock checks that may pass early
+        EarlyTeleportPatches.cs    postfixes on the teleport ability and unlock flag checks
 ```
 
 Every `<Name>Feature` also adds its lines to the F9 dump.
@@ -161,8 +170,8 @@ Mods whose ideas these features build on:
 | [HPNumbers](https://github.com/MicheliniDev/NineSols-HPNumbersMod) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/MicheliniDev/HPNumbers/)) | MicheliniDev | MIT | BossHPNumbers (the idea and its approach, numbers on a canvas of our own read every frame; ours follows the game's boss bar and hides with the game's HUD) |
 | [NoDeathPenalty](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/)) | nozwock | GPL-3.0 | NoDeathPenalty (idea only; ours decides at each death, so it can be turned off at any time, and never empties an older bag) |
 | [NoDeathPenaltyNineSols](https://github.com/Baiker000/NoDeathPenaltyNineSols), the original nozwock's version builds on | Baiker000 | none stated | NoDeathPenalty (idea only) |
-| [TeleportFromAnyNode](https://github.com/nozwock/nine-sols-mods) | nozwock | GPL-3.0 | TeleportFromAnyNode (idea only) |
-| [TeleportFromAnywhere](https://github.com/Ixrec/NineSolsTeleportFromAnywhere) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/TeleportFromAnywhere/)) | Ixrec | MIT | TeleportFromAnyNode (reference for edge cases) |
+| [TeleportFromAnyNode](https://github.com/nozwock/nine-sols-mods) | nozwock | GPL-3.0 | TeleportFromAnyNode (idea only; ours checks the Pavilion button live at each menu opening instead of keeping it in a static, and stores the node left as the Last Node) |
+| [TeleportFromAnywhere](https://github.com/Ixrec/NineSolsTeleportFromAnywhere) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/TeleportFromAnywhere/)) | Ixrec | MIT | TeleportFromAnyNode and EarlyTeleport (reference for the patch points and the story edge cases) |
 | [nine-sols-no-penalty](https://github.com/KiViXJ/nine-sols-no-penalty) | KiViXJ | MIT | NoDeathPenalty (reference) |
 
 Tools and resources:

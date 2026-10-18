@@ -12,6 +12,7 @@ internal static class MenuCategory {
     public const string Death = "--------- Death ---------";
     public const string Hud = "--------- HUD ---------";
     public const string Loot = "--------- Loot and Jin ---------";
+    public const string Travel = "--------- Travel ---------";
     public const string Debug = "--------- Debug ---------";
 }
 

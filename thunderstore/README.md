@@ -86,3 +86,19 @@ The death bag is never multiplied.
 
 Note: picking up coins can take your Jin above 99,999, but the game cuts it back to 99,999 the next time you
 buy or sell something, and the excess is lost. Spend it before you get there.
+
+## Travel
+
+### Teleport from any node
+
+The game lets you teleport only from the Pavilion's Root Node, so a trip between two Root Nodes goes through
+the Pavilion. Now every Root Node that shows the Pavilion button also shows Teleport, with the same list of
+Root Nodes. The node you leave becomes the Last Node, as when you go to the Pavilion. Where the game hides the
+Pavilion button (for example during the Prison), Teleport stays hidden too, so the story's locks still apply.
+It needs the game's teleport, which the story unlocks later on, or Early teleport.
+
+### Early teleport
+
+Off by default. Use the game's teleport before the story unlocks it: at the Pavilion's Root Node, and with
+Teleport from any node at every Root Node that shows the Pavilion button. You can only go to Root Nodes you have
+activated. Nothing is unlocked in your save, and once the game gives you the teleport its own rules apply.

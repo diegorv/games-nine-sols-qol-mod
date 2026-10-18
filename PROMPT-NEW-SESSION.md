@@ -121,9 +121,8 @@ QUESTIONS
 | CI | `.github/workflows/build.yml` builds against `nine-sols-modding/libs-stripped` (it has UniTask, Unity.TextMeshPro and UnityEngine.UI) |
 | Runtime | BepInEx 5.4.23.5, HarmonyX 2.9.0 in `<profile>\BepInEx\core` (we compile against HarmonyX 2.7 from NuGet), ConfigurationManager 18.3.1 |
 
-Installed in the profile: BepInExPack, NineSolsAPI, ScriptEngine, ConfigurationManager, UnityExplorer, NKVDebugMod,
-CutsceneSkip, CelesteSols. The originals our features replace are **disabled** (`.dll.old`): JinMultiplier,
-TeleportFromAnywhere, HPNumbers, YiXPNumber, FarawayPickup, NoDeathPenalty. I play at 1920x1080.
+Installed in the profile (2026-10-18): BepInExPack, NineSolsAPI, ScriptEngine, ConfigurationManager (UnityExplorer
+left only an empty folder). The originals our features replace are no longer installed. I play at 1920x1080.
 
 ### Dev loop
 
@@ -183,6 +182,9 @@ Source/
     Hud/BossHPNumbers/               BossHPNumbersFeature, HPNumber (own overlay canvas, read in LateUpdate; no patches)
     Loot/LootMagnet/                 LootMagnetFeature, LootMagnetPatches (DropItem.Update prefix)
     Loot/JinMultipliers/             JinMultipliersFeature, JinMultipliersPatches (AddGold prefix, Trade/UpdateView postfixes)
+    Travel/TeleportMenus.cs          shared by the two Travel features: Teleport button/tab, Pavilion button, sitting check
+    Travel/TeleportFromAnyNode/      TeleportFromAnyNodeFeature, TeleportFromAnyNodePatches (condition postfix, SubmitImplementation prefix)
+    Travel/EarlyTeleport/            EarlyTeleportFeature, EarlyTeleportPatches (two condition postfixes)
 ```
 
 The features were renamed on 2026-10-17: Respawn → RespawnNearDeath, ParryWindow → PerfectParryWindow,
@@ -243,6 +245,8 @@ Conventions (keep them):
 | EarlyAirDash | `Enabled` (default **off**, my choice) | The game has its own air dash (one per air time: `CanRoll` needs `airDodgeCount == 0`, refilled by `ResetJumpAndDash`), gated by the `RollDodgeInAirUpgrade` ability, unlocked later in the game. A transpiler swaps the one `RollDodgeInAirUpgrade.IsActivated` read in `Player.DodgeCheck` (IL_0054/IL_0059) for `AirDashUnlocked(upgrade)` = the game's getter OR (`Enabled` and not `IsAcquired`): only before the upgrade is acquired, so once it is, the game's own rules (challenge ability packs, unequip, conditions) decide again. With the Down Dash jade, down dashes are unlimited (the game's own `CanDownDash`). The ability is never written (no save change; UI and skill tree still see it locked). `[air dash]` Debug line when the mod made the difference. |
 | FastHeal | `Enabled` (default on) | Heal at the Quick Dose jade's speed without the jade (my choice; no multiplier, no stacking). `PlayerDrinkPotionState.OnStateEnter` sets `animator.speed = 1.66666f` when its private `isSpeedUpHeal` (`SpeedUpHealJade.IsActivated`) is true; a transpiler swaps that one call for `SpeedUpHeal(state)` = the jade's getter OR `Enabled`. The jade the state checks is `(Jade Data) Fast Pipe 速藥玉` (seen in game with F9). `[heal]` Debug line when the mod made the difference. |
 | DashInvulnerability | `Enabled` (on), `InvulnerabilityAfterDash` (0.05-0.5 s, default 0.1, my choice; vanilla 0.05) | I asked for invulnerability during the dash: the game already has it, and the F9/log diagnostics showed the hits came right after it (the Spear Horse's `SlashDamage`, always ~0.05 s after the receivers came back). A transpiler swaps the one `ldc.r4 0.05` between `ldftn DodgeEnd` and `Timer.AddTask` in `PlayerRollState.OnStateExit` for `InvulnerabilityAfterDash()`; a prefix skips a `DodgeEnd` that fires while a new dash (not weak) is under way (the timer has no owner, so the previous dash's end would cut the new one's invulnerability). A prefix on `Player.OnTakeDamage` logs `[dash]` hits during or right after a dash. With 0.1 s, two of three slash hits still landed ~0.05 s after the window (0.2 s would cover them); I kept 0.1. |
+| TeleportFromAnyNode | `Enabled` (default on) | Postfix on the protected `TeleportPointMatchSavePanelCondition.isValid` ("this Root Node is the Pavilion"): a false result becomes true only for the instance on the Root Node menu's Teleport button (a direct child of `SavePanel.TeleportButton`) or under the pause menu's Teleport tab, while I sit at another Root Node (`TeleportMenus.SittingNode`) whose Pavilion button (the button with a `TeleportToSavePointAction` to `AGSavePoint`, `GoHomeFlute`) is valid right now; inverted instances are never touched. Every other condition stays, so the game's story locks hide the Teleport where they hide the Pavilion button. A prefix on the `TeleportPointButton.SubmitImplementation` stub stores the node left with `SetLastSaveItem` (guarded), like the Pavilion button: the trip ends as the route through the Pavilion would (respawn at the destination, Last Node at the node left). `[teleport]` Debug lines. Off when nozwock's or Ixrec's mod is loaded. |
+| EarlyTeleport | `Enabled` (default **off**, like EarlyAirDash) | I asked for it after the F9 showed my save does not have the game's teleport yet (`(Ability) 神遊系統` not acquired). Postfixes on `AbilityActivatedCondition.isValid` (only the Teleport tab's "[Ability] 神遊Activated") and `GameFlagPropertyCondition.isValid` (only the non-inverted one on the Teleport button, "神遊已解鎖" = that ability's `acquired` field; the inverted "not in the final stage" stays) pass while the ability is not acquired. Nothing written; once the game gives the ability its rules decide. Alone: Teleport only at the Pavilion. `[early teleport]` Debug lines. |
 
 TrueDamage was **dropped** (it makes the game harder); its report stays in `research/truedamage.md`.
 
@@ -363,6 +367,29 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
   Dose jade (`(Jade Data) Fast Pipe 速藥玉`, the state's own `SpeedUpHealJade` wrapper) only sets `animator.speed =
   1.66666f` on enter (`OnStateExit` sets 1). `PlayerMainAbilityCollection.SpeedUpHealJade` is never read.
 
+**Teleport** (wiring seen in game with a one-off F9 dump, commit `9acd84c`)
+- Root Node menu = `GameCore.savePanelUiController` (`SavePanel`, same object as `UIManager.SavePointUI`); its
+  `RCGUIComponentResetGroup` is on the panel itself and `EnableCheck`s every button when it is enabled. Buttons in
+  hierarchy order: Challenge, Rest, Jade, SkillTree, Status, "back to last" (Last Node), "GoToAG 回議會" (Pavilion),
+  "Teleport 神遊" (= `SavePanel.TeleportButton`, two button components on one GameObject), each condition on a child:
+  - Teleport: "神遊已解鎖" (teleport ability acquired), "不在最後階段" (inverted: final stage), "match YiBase"
+    (`TeleportPointMatchSavePanelCondition` with the Pavilion's node), memory challenge (inverted).
+  - Pavilion: home flute flag, "not match YiBase" (inverted), `TreeGotMadCondition` (inverted; Lady Ethereal
+    killed and no double jump yet), `PlayerInPrisionCondition` (inverted), final stage, memory challenge; its
+    `TeleportToSavePointAction` (AG, `GoHomeFlute`) sits on the button with the same conditions.
+  - Last Node: "match YiBase", Tree, final stage, memory challenge, flute, `TeleportCollectionLastSavedCondition`
+    (inverted: a Last Node exists); `TeleportToLastSavePointAction` (`GoHomeFlute`).
+- Pause menu tab "TeleportPanel Tab" (`UIManager.menuUI.tabsUI`, `PanelType == TeleportPanel`, `bindPanel ==
+  UIManager.teleportPanel`): `PlayerSitAtSavePointCondition` (so it never shows away from a Root Node, which masks
+  nozwock's static-cache bug), `CurrentTeleportPointActivateCondition`, "[Ability] 神遊Activated", final stage,
+  "match YiBase", memory challenge. Map, Inventory and Encyclopedia tabs are hidden while sitting.
+- The game's teleport is the ability `(Ability) 神遊系統`, unlocked by the story after the point where I am
+  (A2, Yingzhao): before that even the Pavilion shows no Teleport, only Pavilion/Last Node trips.
+- `TeleportPointButton.SubmitImplementation` works from any Root Node I sit at (bound `SavePoint` +
+  `fluteCutScene`); `PlayerIsHere` blocks the current node. `SavePanel.CurrentSavePoint` goes stale (only that
+  method clears it). `SetLastSaveItem` writes the flag before a lookup that throws for unknown nodes;
+  `TeleportPointCollection` refuses the Pavilion as Last Node; Last Node never changes the respawn point.
+
 **Config menu and runtime**
 - ConfigurationManager 18.3.1 finds `ConfigurationManagerAttributes` by type name, copies `Order`/`IsAdvanced`
   by field name, sorts by Order descending.
@@ -378,51 +405,8 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 
 ## What comes next
 
-Only TeleportFromAnyNode is left (then release polish, see Open items).
-
-### TeleportFromAnyNode (research: `research/teleport.md`)
-
-It goes in `Features/Travel/TeleportFromAnyNode/`, in a new `MenuCategory.Travel` group
-(`--------- Travel ---------`), unless I choose another group.
-
-What I want: **teleport from any Root Node where the game shows the Pavilion button, and remember the node I
-left so "Last Node" brings me back.** Today the node list only works from the Pavilion (the game's hub), so a
-trip between two nodes means going through the Pavilion first.
-
-Where to start:
-- Read `research/teleport.md`, its checkers `research/teleport.verify-a.md` and `teleport.verify-b.md`, and the
-  "teleport" section of `research/verification-summary.md` (top risks, the originals' bugs, UNCONFIRMED list and
-  the checkers' missing references: other writers of `lastSaveTeleportPoint`/`SetReviveSavePoint`, the giant
-  elevator path, `TeleportUIButtonWithPermission`, tab-click re-evaluation).
-- The originals, to clone read-only into the scratchpad and compare (follow the simplest proven patch point):
-  nozwock's TeleportFromAnyNode (`github.com/nozwock/nine-sols-mods`, GPL-3.0: idea only, no code copied) and
-  Ixrec's TeleportFromAnywhere (`github.com/Ixrec/NineSolsTeleportFromAnywhere`, MIT; installed but disabled
-  in my profile as `.dll.old`).
-- The buttons' prefab wiring (which condition components sit on the Root Node "Teleport" button, the
-  "GoToAG" (Pavilion) button and the pause-menu "TeleportPanel Tab", and whether any is inverted) is
-  UNCONFIRMED and the design depends on it: get it first with a one-off F9 dump section (list the Root Node menu
-  buttons and the tab with their conditions, `FinalResultInverted` and active state) while I sit at a node,
-  or with UnityExplorer.
-
-What the research found:
-- `TeleportPointMatchSavePanelCondition.isValid` = `bindedTeleportPointData == savePanelUiController.CurrentSavePoint`,
-  never cached by the game; buttons re-check it on enable, tabs on every `GoToTab`.
-- A postfix on `isValid` hits every instance (some may be inverted): scope it to the Root Node "Teleport" button
-  and the pause-menu "TeleportPanel Tab" only, both decided by the same live check.
-- `CurrentSavePoint` is cleared only by `TeleportPointButton.SubmitImplementation` and goes stale after standing
-  up; "sitting at a node right now" = `CurrentStateType == EnterSavePoint && CurrentSavePointGameObjectOnScene !=
-  null && its BindingTeleportPoint == CurrentSavePoint`.
-- A prefix on the `SubmitImplementation` stub runs before `ClearCurrentSavePoint` (no transpiler needed). Guard
-  `SetLastSaveItem` (it throws for nodes missing from `allTeleportPoints`). `SetLastSaveItem(Pavilion)` is a
-  no-op, and the respawn point is not affected.
-- Gating on the live Pavilion button validity keeps us to places vanilla already reaches via the Pavilion.
-- nozwock's static-cache bug is confirmed in code. Prefab wiring of the buttons is UNCONFIRMED (UnityExplorer).
-- Story-skip risks documented by the originals (for teleporting from anywhere): after restoring power in Outer
-  Warehouse you can nearly skip the first meeting with Yanlao; near the end of the Prison sequence you can skip
-  Chiyou's scene. Ixrec also forces boss arena doors open and fixes Lady E's nymph and the opera theater. Check
-  which still apply when teleporting only from Root Nodes that show the Pavilion button.
-- Original GUIDs: `nozwock.TeleportFromAnyNode`; Ixrec's `TeleportFromAnywhere` is an alternative (expected
-  GUID `TeleportFromAnywhere`).
+Every planned feature is done. Next: release polish (see Open items), unless I ask for a new feature (then run
+the discovery fan-out of "The process").
 
 ---
 
@@ -457,6 +441,10 @@ What the research found:
 - Every feature's review is applied: HPNumbers, AirDash and HealSpeed (now BossHPNumbers, EarlyAirDash,
   FastHeal) in `1617416`, `defc3c8`, `8277459`, DashInvulnerability in `366102a`. The rename itself was checked
   by building, reloading and reading the log, not by a review.
+- TeleportFromAnyNode/EarlyTeleport, not seen in game yet: the story locks (Prison, after Lady Ethereal, final
+  stage), and EarlyTeleport handing over to the game when `(Ability) 神遊系統` is acquired. The Teleport tab and
+  button decisions log a few `[teleport]`/`[early teleport]` Debug lines per menu opening (each tab change runs
+  `PrepareValidTab` twice, and both button components `EnableCheck`).
 - Release polish later: `DebugLogging` off by default, Thunderstore namespace/websiteUrl/icon, version,
   remove one-off dump lines.
 
@@ -466,7 +454,4 @@ What the research found:
    pattern to copy for "make one game check pass").
 2. Decompile the game into the session scratchpad (command above).
 3. Read the end of `LogOutput.log` to see where I left off, and `git log --oneline -10`.
-4. Start **TeleportFromAnyNode** (see "What comes next"): read its research and checkers, clone the two originals into the
-   scratchpad, verify the key facts yourself, and give me the synthesis in Portuguese. Then the F9 diagnostic for
-   the buttons' wiring (ask me to sit at a Root Node and press F9, and also F9 with the pause menu's teleport tab),
-   and only then the plan.
+4. Ask me what comes next: release polish (see Open items) or a new feature.

@@ -15,6 +15,7 @@ using NineSolsQoL.Features.Death.RespawnNearDeath;
 using NineSolsQoL.Features.Hud.BossHPNumbers;
 using NineSolsQoL.Features.Loot.JinMultipliers;
 using NineSolsQoL.Features.Loot.LootMagnet;
+using NineSolsQoL.Features.Travel.EarlyTeleport;
 using NineSolsQoL.Features.Travel.TeleportFromAnyNode;
 
 namespace NineSolsQoL;
@@ -45,7 +46,8 @@ public class Plugin : BaseUnityPlugin {
         BossHPNumbersFeature.Init(Config);
         LootMagnetFeature.Init(Config);
         JinMultipliersFeature.Init(Config);
-        TeleportFromAnyNodeDiagnostics.Init();
+        TeleportFromAnyNodeFeature.Init(Config);
+        EarlyTeleportFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -71,6 +73,9 @@ public class Plugin : BaseUnityPlugin {
             "nozwock.NoDeathPenalty");
         Patch("LootMagnet", typeof(LootMagnetPatches), "nozwock.FarawayPickup");
         Patch("JinMultipliers", typeof(JinMultipliersPatches), "JinMultiplier");
+        Patch("TeleportFromAnyNode", typeof(TeleportFromAnyNodePatches), "nozwock.TeleportFromAnyNode",
+            "TeleportFromAnywhere");
+        Patch("EarlyTeleport", typeof(EarlyTeleportPatches));
         // Patches nothing: it only draws numbers
         BossHPNumbersFeature.Active = !IsReplaced("BossHPNumbers", "HPNumbers");
     }
