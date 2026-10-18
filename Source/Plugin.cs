@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
 using BepInEx.Bootstrap;
+using BepInEx.Configuration;
 using HarmonyLib;
 using NineSolsQoL.Core;
 using NineSolsQoL.Features.Abilities.EarlyAirDash;
@@ -30,39 +31,55 @@ namespace NineSolsQoL;
 public class Plugin : BaseUnityPlugin {
     // One Harmony instance per feature, so a feature whose patches fail can be undone on its own
     private readonly List<Harmony> harmonies = new();
-    private bool initialized;
+    // Features whose setup threw: they stay off, the others still work
+    private readonly HashSet<string> failed = new();
+    private bool debugToolsFailed;
 
     private void Awake() {
         Log.Init(Logger);
-        // The in-game menu shows each group's features in this order (and the groups by name)
-        DebugTools.Init(Config);
-        EarlyAirDashFeature.Init(Config);
-        FastHealFeature.Init(Config);
-        PerfectParryWindowFeature.Init(Config);
-        ParryFromBehindFeature.Init(Config);
-        DashInvulnerabilityFeature.Init(Config);
-        RespawnNearDeathFeature.Init(Config);
-        NoDeathPenaltyFeature.Init(Config);
-        BossHPNumbersFeature.Init(Config);
-        LootMagnetFeature.Init(Config);
-        JinMultipliersFeature.Init(Config);
-        TeleportFromAnyNodeFeature.Init(Config);
-        EarlyTeleportFeature.Init(Config);
+        // First, so that no failure below can leave the in-game menu to be destroyed on the title screen
         RegisterLifeCycle();
-        initialized = true;
+
+        // BepInEx saves the whole .cfg for every new entry: save once at the end instead. If the file
+        // cannot be written (read-only, locked), the entries still work with their values in memory.
+        Config.SaveOnConfigSet = false;
+        // The in-game menu shows each group's features in this order (and the groups by name)
+        Init("Debug", DebugTools.Init);
+        Init("EarlyAirDash", EarlyAirDashFeature.Init);
+        Init("FastHeal", FastHealFeature.Init);
+        Init("PerfectParryWindow", PerfectParryWindowFeature.Init);
+        Init("ParryFromBehind", ParryFromBehindFeature.Init);
+        Init("DashInvulnerability", DashInvulnerabilityFeature.Init);
+        Init("RespawnNearDeath", RespawnNearDeathFeature.Init);
+        Init("NoDeathPenalty", NoDeathPenaltyFeature.Init);
+        Init("BossHPNumbers", BossHPNumbersFeature.Init);
+        Init("LootMagnet", LootMagnetFeature.Init);
+        Init("JinMultipliers", JinMultipliersFeature.Init);
+        Init("TeleportFromAnyNode", TeleportFromAnyNodeFeature.Init);
+        Init("EarlyTeleport", EarlyTeleportFeature.Init);
+        Config.SaveOnConfigSet = true;
+        try {
+            Config.Save();
+        } catch (Exception e) {
+            Log.Warning($"Could not save {Config.ConfigFilePath}, the settings still apply: {e.Message}");
+        }
 
         Log.Info($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded on '{gameObject.name}'");
+    }
+
+    // A feature whose setup throws stays off (Patch skips it); the others still start
+    private void Init(string feature, Action<ConfigFile> init) {
+        try {
+            init(Config);
+        } catch (Exception e) {
+            failed.Add(feature);
+            Log.Error($"{feature} is off because its setup failed: {e}");
+        }
     }
 
     // BepInEx creates every plugin before any of them gets its Start, so here a feature can tell
     // whether the mod it replaces is loaded too
     private void Start() {
-        // Unity still calls Start after an exception in Awake; the patches need the config entries
-        if (!initialized) {
-            Log.Error("Not patching the game: the mod failed to start (see the error above)");
-            return;
-        }
-
         Patch("EarlyAirDash", typeof(EarlyAirDashPatches));
         Patch("FastHeal", typeof(FastHealPatches));
         Patch("PerfectParryWindow", typeof(PerfectParryWindowPatches), "supidowagon.PerfectParry", "nozwock.PerfectParry");
@@ -77,11 +94,17 @@ public class Plugin : BaseUnityPlugin {
             "TeleportFromAnywhere");
         Patch("EarlyTeleport", typeof(EarlyTeleportPatches));
         // Patches nothing: it only draws numbers
-        BossHPNumbersFeature.Active = !IsReplaced("BossHPNumbers", "HPNumbers");
+        BossHPNumbersFeature.Active = !failed.Contains("BossHPNumbers") && !IsReplaced("BossHPNumbers", "HPNumbers");
     }
 
     private void Update() {
-        DebugTools.Update();
+        if (debugToolsFailed || failed.Contains("Debug")) return;
+        try {
+            DebugTools.Update();
+        } catch (Exception e) {
+            debugToolsFailed = true;
+            Log.Error($"The debug tools (F9 dump, [hitch] lines) are off until the game restarts, after an error: {e}");
+        }
     }
 
     private void LateUpdate() {
@@ -92,8 +115,18 @@ public class Plugin : BaseUnityPlugin {
         // A ScriptEngine reload creates a new instance: remove what the mod draws (first: it cannot throw)
         // and undo the patches so they are not applied twice
         BossHPNumbersFeature.Destroy();
-        foreach (var harmony in harmonies) harmony.UnpatchSelf();
+        foreach (var harmony in harmonies) Unpatch(harmony);
         Log.Info($"{MyPluginInfo.PLUGIN_NAME} unloaded");
+    }
+
+    // Undoes one feature's patches. An error here must not keep the other features from being undone
+    // (after a hot reload they would apply twice) or from being patched.
+    private static void Unpatch(Harmony harmony) {
+        try {
+            harmony.UnpatchSelf();
+        } catch (Exception e) {
+            Log.Error($"Undoing the patches of {harmony.Id} failed: {e}");
+        }
     }
 
     // Whether one of the mods a feature replaces (by GUID) is loaded: then the feature stays off, so
@@ -108,30 +141,31 @@ public class Plugin : BaseUnityPlugin {
     private void Patch(string feature, Type patches, params string[] replacedMods) =>
         Patch(feature, new[] { patches }, replacedMods);
 
-    // Applies one feature's [HarmonyPatch] classes, unless the feature is replaced (IsReplaced).
-    // Harmony only looks at the methods declared in each class, not at nested classes. The classes
-    // share one Harmony instance, so a failure in any of them undoes all of them.
+    // Applies one feature's [HarmonyPatch] classes, unless the feature failed its setup or is replaced
+    // (IsReplaced). Harmony only looks at the methods declared in each class, not at nested classes.
+    // The classes share one Harmony instance, so a failure in any of them, or a class that patches
+    // nothing, undoes all of them.
     private void Patch(string feature, Type[] patches, params string[] replacedMods) {
-        if (IsReplaced(feature, replacedMods)) return;
+        if (failed.Contains(feature) || IsReplaced(feature, replacedMods)) return;
 
         var harmony = new Harmony($"{MyPluginInfo.PLUGIN_GUID}.{feature}");
         harmonies.Add(harmony);
         try {
-            foreach (var type in patches) harmony.PatchAll(type);
+            foreach (var type in patches) {
+                // What PatchAll(Type) does, keeping the list of methods it patched
+                var patched = harmony.CreateClassProcessor(type, true).Patch();
+                if (patched == null || patched.Count == 0) {
+                    throw new InvalidOperationException($"{type.Name} patched nothing: no [HarmonyPatch] method declared in it");
+                }
+            }
         } catch (Exception e) {
             // Harmony stops at the first method it cannot patch: undo the ones before it
-            harmony.UnpatchSelf();
             Log.Error($"{feature} is off because patching the game failed: {e}");
+            Unpatch(harmony);
             return;
         }
 
-        var count = harmony.GetPatchedMethods().Count();
-        if (count == 0) {
-            Log.Error($"{feature} patched nothing: no [HarmonyPatch] method declared in " +
-                      string.Join(", ", patches.Select(p => p.Name)));
-        } else {
-            Log.Debug($"{feature}: {count} game method(s) patched");
-        }
+        Log.Debug($"{feature}: {harmony.GetPatchedMethods().Count()} game method(s) patched");
     }
 
     // When going back to the title screen the game destroys every GameObject that is not
