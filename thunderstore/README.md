@@ -32,9 +32,9 @@ times faster, so a heal takes 60% of the time. With the jade equipped nothing ch
 
 ## Air dash
 
-Off by default. The game gives Yi an air dash later on (one per jump, recharged when you land, touch a wall,
-ledge or rope, parry and so on). With `AirDash` on, you can use it before you get that upgrade. Nothing is
-unlocked in your save: turn it off and the game is back to its own rule.
+Off by default. The game gives Yi an air dash later on (once per air time, recharged when you land, slide on
+a wall, grab a ledge or rope, parry and so on). With `AirDash` on, you can use it before you get that
+upgrade. Nothing is unlocked in your save, and once you get the upgrade the game's own rules apply again.
 
 ## Parry window
 

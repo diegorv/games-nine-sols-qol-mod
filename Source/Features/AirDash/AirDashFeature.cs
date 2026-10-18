@@ -8,11 +8,13 @@ namespace NineSolsQoL.Features.AirDash;
 //
 // The game already has an air dash: Player.DodgeCheck lets Yi dash while airborne once the
 // RollDodgeInAirUpgrade ability is active, once per air time (CanRoll needs airDodgeCount == 0, which
-// PlayerRollState raises on an air dash and ResetJumpAndDash clears on landing, walls, ledges, ropes,
-// grapples, parries, jump-kick bounces and talisman sticks). AirDashPatches makes only that check pass
-// while the feature is on: the ability itself stays as it is, so the save, the skill tree and the rest
-// of the game still see the upgrade as not unlocked. Once the game unlocks it, the feature changes
-// nothing.
+// PlayerRollState raises on an air dash and ResetJumpAndDash clears on landing, wall slides, ledges,
+// ropes, grapples, parries, jump-kick bounces and talisman sticks; a double jump does not). The one
+// exception is the game's own: with the Down Dash jade, down dashes are never limited (CanDownDash).
+// AirDashPatches makes only that check pass while the upgrade is not acquired yet: the ability itself
+// stays as it is, so the save, the skill tree and the rest of the game still see it as not unlocked.
+// Once the upgrade is acquired the game's own rules decide again, including when the game turns it off
+// on purpose (ability packs of challenges, unequip actions, conditions).
 internal static class AirDashFeature {
     public static ConfigEntry<bool> Enabled = null!;
 
@@ -22,26 +24,28 @@ internal static class AirDashFeature {
     public static void Init(ConfigFile config) {
         var section = new ConfigSection(config, "AirDash");
         Enabled = section.Bind("Enabled", false,
-            "Dash in the air before the game gives you its air dash upgrade: once per jump, recharged when you " +
-            "land, touch a wall, ledge or rope, parry, and by everything else that recharges it in the game. " +
-            "Off: the game's rule, no air dash until the upgrade");
+            "Dash in the air before the game gives you its air dash upgrade: once per air time (a double jump " +
+            "does not give another), recharged when you land, slide on a wall, grab a ledge or rope, parry and " +
+            "the like, as the game does after the upgrade. Off: the game's rule, no air dash until the upgrade");
 
         DebugTools.AddDumpSection(Describe);
     }
 
     // Called by Player.DodgeCheck in place of reading RollDodgeInAirUpgrade.IsActivated, when Yi is
-    // airborne and could dash otherwise. Runs inside the game's input handling; only the game's own
-    // getter can throw, as it would without the mod.
+    // airborne and every earlier check passed (the QTE check still follows). Runs inside the game's input
+    // handling; only the game's own getter can throw, as it would without the mod.
     public static bool AirDashUnlocked(PlayerAbilityData upgrade) {
         // The game's getter still runs: it applies or removes the ability's effects when its state changes
         if (upgrade.IsActivated) return true;
-        if (!Enabled.Value) return false;
+        // Once acquired, an inactive upgrade is the game's decision (a plain read of the acquired flag)
+        if (!Enabled.Value || upgrade.IsAcquired) return false;
 
-        Log.Debug("[air dash] allowed by AirDash: the game's air dash upgrade is not unlocked yet");
+        Log.Debug("[air dash] the game's air dash check passed because of AirDash (upgrade not acquired yet)");
         return true;
     }
 
-    // Whether the game's upgrade is unlocked, read without IsActivated (which applies its effects)
+    // The game's upgrade, read without IsActivated (which applies its effects): acquired decides whether
+    // the feature acts
     private static IEnumerable<string> Describe(GameCore core) {
         var upgrade = core.playerAbilityCollection != null ? core.playerAbilityCollection.RollDodgeInAirUpgrade : null;
         var state = upgrade != null ? $"acquired={upgrade.IsAcquired} equipped={upgrade.IsEquipped}" : "missing";

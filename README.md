@@ -16,7 +16,7 @@ can be turned off. Work in progress. The player-facing description is in
 | HPNumbers | The boss's HP (and, if you want, its internal injury) as numbers | done | MicheliniDev's HPNumbers |
 | NoDeathPenalty | Never lose Jin or XP on death; the death bag still appears, empty | done | nozwock's NoDeathPenalty |
 | Teleport | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
-| AirDash | The game's own air dash (one per jump) before its upgrade; off by default | done | original |
+| AirDash | The game's own air dash (once per air time) before you acquire its upgrade; off by default | done | original |
 | HealSpeed | Heal with the pipe as fast as with the Quick Dose jade, without the jade | done | original |
 
 Every feature is our own implementation, written from the game's code. Ideas taken from other mods are credited
