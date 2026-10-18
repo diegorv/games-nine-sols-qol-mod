@@ -15,6 +15,7 @@ using NineSolsQoL.Features.Death.RespawnNearDeath;
 using NineSolsQoL.Features.Hud.BossHPNumbers;
 using NineSolsQoL.Features.Loot.JinMultipliers;
 using NineSolsQoL.Features.Loot.LootMagnet;
+using NineSolsQoL.Features.Travel.TeleportFromAnyNode;
 
 namespace NineSolsQoL;
 
@@ -44,6 +45,7 @@ public class Plugin : BaseUnityPlugin {
         BossHPNumbersFeature.Init(Config);
         LootMagnetFeature.Init(Config);
         JinMultipliersFeature.Init(Config);
+        TeleportFromAnyNodeDiagnostics.Init();
         RegisterLifeCycle();
         initialized = true;
 
