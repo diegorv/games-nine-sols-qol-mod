@@ -30,7 +30,7 @@ internal static class DebugTools {
     private static float lastFrameTime;
 
     public static void Init(ConfigFile config) {
-        var section = new ConfigSection(config, "Debug");
+        var section = new ConfigSection(config, "Debug", MenuCategory.Debug, null);
         DebugLogging = section.Bind("DebugLogging", true,
             "Write detailed diagnostics to the BepInEx log", advanced: true);
         // F8 opens one of the game's own debug screens

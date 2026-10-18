@@ -5,24 +5,25 @@ using BepInEx;
 using BepInEx.Bootstrap;
 using HarmonyLib;
 using NineSolsQoL.Core;
-using NineSolsQoL.Features.AirDash;
-using NineSolsQoL.Features.AnyDirectionParry;
-using NineSolsQoL.Features.DashInvulnerability;
-using NineSolsQoL.Features.HealSpeed;
-using NineSolsQoL.Features.HPNumbers;
-using NineSolsQoL.Features.JinMultipliers;
-using NineSolsQoL.Features.NoDeathPenalty;
-using NineSolsQoL.Features.ParryWindow;
-using NineSolsQoL.Features.Pickup;
-using NineSolsQoL.Features.Respawn;
+using NineSolsQoL.Features.Abilities.EarlyAirDash;
+using NineSolsQoL.Features.Abilities.FastHeal;
+using NineSolsQoL.Features.Combat.DashInvulnerability;
+using NineSolsQoL.Features.Combat.ParryFromBehind;
+using NineSolsQoL.Features.Combat.PerfectParryWindow;
+using NineSolsQoL.Features.Death.NoDeathPenalty;
+using NineSolsQoL.Features.Death.RespawnNearDeath;
+using NineSolsQoL.Features.Hud.BossHPNumbers;
+using NineSolsQoL.Features.Loot.JinMultipliers;
+using NineSolsQoL.Features.Loot.LootMagnet;
 
 namespace NineSolsQoL;
 
 // Entry point. BepInEx creates this component when the game starts, or ScriptEngine does when
 // the DLL is in BepInEx/scripts and you press F6.
 //
-// Each feature lives in Features/<Name>: its config section (Init), its Harmony patches and the
-// code they forward to. The mod only depends on BepInEx, Harmony and the game itself.
+// Each feature lives in Features/<Group>/<Name>, the group being its group in the in-game menu: its
+// config section (Init), its Harmony patches and the code they forward to. The mod only depends on
+// BepInEx, Harmony and the game itself.
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class Plugin : BaseUnityPlugin {
     // One Harmony instance per feature, so a feature whose patches fail can be undone on its own
@@ -31,17 +32,18 @@ public class Plugin : BaseUnityPlugin {
 
     private void Awake() {
         Log.Init(Logger);
+        // The in-game menu shows each group's features in this order (and the groups by name)
         DebugTools.Init(Config);
-        RespawnFeature.Init(Config);
-        ParryWindowFeature.Init(Config);
-        AnyDirectionParryFeature.Init(Config);
-        JinMultipliersFeature.Init(Config);
-        PickupFeature.Init(Config);
-        NoDeathPenaltyFeature.Init(Config);
-        HPNumbersFeature.Init(Config);
-        AirDashFeature.Init(Config);
-        HealSpeedFeature.Init(Config);
+        EarlyAirDashFeature.Init(Config);
+        FastHealFeature.Init(Config);
+        PerfectParryWindowFeature.Init(Config);
+        ParryFromBehindFeature.Init(Config);
         DashInvulnerabilityFeature.Init(Config);
+        RespawnNearDeathFeature.Init(Config);
+        NoDeathPenaltyFeature.Init(Config);
+        BossHPNumbersFeature.Init(Config);
+        LootMagnetFeature.Init(Config);
+        JinMultipliersFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -57,18 +59,18 @@ public class Plugin : BaseUnityPlugin {
             return;
         }
 
-        Patch("Respawn", typeof(RespawnPatches));
-        Patch("ParryWindow", typeof(ParryWindowPatches), "supidowagon.PerfectParry", "nozwock.PerfectParry");
-        Patch("AnyDirectionParry", typeof(AnyDirectionParryPatches), "supidowagon.AnyDirectionParry");
-        Patch("JinMultipliers", typeof(JinMultipliersPatches), "JinMultiplier");
-        Patch("Pickup", typeof(PickupPatches), "nozwock.FarawayPickup");
+        Patch("EarlyAirDash", typeof(EarlyAirDashPatches));
+        Patch("FastHeal", typeof(FastHealPatches));
+        Patch("PerfectParryWindow", typeof(PerfectParryWindowPatches), "supidowagon.PerfectParry", "nozwock.PerfectParry");
+        Patch("ParryFromBehind", typeof(ParryFromBehindPatches), "supidowagon.AnyDirectionParry");
+        Patch("DashInvulnerability", typeof(DashInvulnerabilityPatches));
+        Patch("RespawnNearDeath", typeof(RespawnNearDeathPatches));
         Patch("NoDeathPenalty", new[] { typeof(NoDeathPenaltyPatches), typeof(NoDeathPenaltyTranspiler) },
             "nozwock.NoDeathPenalty");
-        Patch("AirDash", typeof(AirDashPatches));
-        Patch("HealSpeed", typeof(HealSpeedPatches));
-        Patch("DashInvulnerability", typeof(DashInvulnerabilityPatches));
+        Patch("LootMagnet", typeof(LootMagnetPatches), "nozwock.FarawayPickup");
+        Patch("JinMultipliers", typeof(JinMultipliersPatches), "JinMultiplier");
         // Patches nothing: it only draws numbers
-        HPNumbersFeature.Active = !IsReplaced("HPNumbers", "HPNumbers");
+        BossHPNumbersFeature.Active = !IsReplaced("BossHPNumbers", "HPNumbers");
     }
 
     private void Update() {
@@ -76,13 +78,13 @@ public class Plugin : BaseUnityPlugin {
     }
 
     private void LateUpdate() {
-        HPNumbersFeature.LateUpdate();
+        BossHPNumbersFeature.LateUpdate();
     }
 
     private void OnDestroy() {
         // A ScriptEngine reload creates a new instance: remove what the mod draws (first: it cannot throw)
         // and undo the patches so they are not applied twice
-        HPNumbersFeature.Destroy();
+        BossHPNumbersFeature.Destroy();
         foreach (var harmony in harmonies) harmony.UnpatchSelf();
         Log.Info($"{MyPluginInfo.PLUGIN_NAME} unloaded");
     }

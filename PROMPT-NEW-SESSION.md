@@ -63,8 +63,9 @@ Every feature so far went through this and passed its in-game test on the first 
 10. Keep `README.md` (features table, code layout, credits) and `thunderstore/README.md` (player-facing) up to
     date. Mark a feature `done` after my in-game test.
 
-**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 12 Opus
-and 36 Haiku were unused after HealSpeed). Use Opus for discovery and adversarial review, Haiku for checking
+**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 11 Opus
+and 36 Haiku were unused at the end of the session that renamed the features). Use Opus for discovery and
+adversarial review, Haiku for checking
 citations, completeness, runtime APIs and game facts. When I allow multi-agent orchestration, run discovery
 and review as Workflow scripts (pipeline: discovery agent → its verifiers in parallel; review: Opus + Haikus in
 parallel). Their results are files in `research/` or structured output, so your context stays small.
@@ -158,31 +159,42 @@ Source/
   Plugin.cs                  Awake: each feature's Init; Start: each feature's patches; RCGLifeCycle registration
   Log.cs                     Log.Debug only when DebugLogging is on (written at Info level); Log.DebugEnabled
   Core/
-    ConfigSection.cs         binds a section's entries in menu order (Enabled first), ranges, advanced flag
-    ConfigurationManagerAttributes.cs  Order / IsAdvanced, read by ConfigurationManager by type and field name
+    ConfigSection.cs         binds a section's entries: menu group (MenuCategory), title, label, order, range
+    ConfigurationManagerAttributes.cs  Order / IsAdvanced / Category / DispName, read by ConfigurationManager by name
     GameAccess.cs            CoreInLevel (null on title/loading), IsBossFightActive
-    GamePrivates.cs          private game fields and methods, looked up lazily (DropItemPrivates for Pickup)
+    GamePrivates.cs          private game fields and methods, looked up lazily (DropItemPrivates for LootMagnet)
     UnityExtensions.cs       HierarchyPath, Bounds.Describe
     DebugTools.cs            [Debug] config, F9 dump (+ AddDumpSection, each section in try/catch), watchdog, [hitch]
-  Features/
-    Respawn/                 RespawnFeature, RespawnPatches, DeathSnapshot, RespawnController, Respawner, SafeTrail, ArenaTracker
-    ParryWindow/             ParryWindowFeature, ParryWindowPatches (transpiler)
-    AnyDirectionParry/       AnyDirectionParryFeature, AnyDirectionParryPatches (postfix)
-    JinMultipliers/          JinMultipliersFeature, JinMultipliersPatches (AddGold prefix, Trade/UpdateView postfixes)
-    Pickup/                  PickupFeature, PickupPatches (DropItem.Update prefix)
-    NoDeathPenalty/          NoDeathPenaltyFeature, NoDeathPenaltyPatches (bag prefix/postfix), NoDeathPenaltyTranspiler
-    HPNumbers/               HPNumbersFeature, HPNumber (own overlay canvas, read in LateUpdate; no patches)
-    AirDash/                 AirDashFeature, AirDashPatches (Player.DodgeCheck transpiler)
-    HealSpeed/               HealSpeedFeature, HealSpeedPatches (PlayerDrinkPotionState.OnStateEnter transpiler)
-    DashInvulnerability/     DashInvulnerabilityFeature, DashInvulnerabilityPatches (OnStateExit transpiler, DodgeEnd prefix, hit diagnostics)
+  Features/                  <Group>/<Name>/, the group being the feature's group in the F1 menu
+    Abilities/EarlyAirDash/          EarlyAirDashFeature, EarlyAirDashPatches (Player.DodgeCheck transpiler)
+    Abilities/FastHeal/              FastHealFeature, FastHealPatches (PlayerDrinkPotionState.OnStateEnter transpiler)
+    Combat/PerfectParryWindow/       PerfectParryWindowFeature, PerfectParryWindowPatches (transpiler)
+    Combat/ParryFromBehind/          ParryFromBehindFeature, ParryFromBehindPatches (postfix)
+    Combat/DashInvulnerability/      DashInvulnerabilityFeature, DashInvulnerabilityPatches (OnStateExit transpiler, DodgeEnd prefix, hit diagnostics)
+    Death/RespawnNearDeath/          RespawnNearDeathFeature, RespawnNearDeathPatches, DeathSnapshot, RespawnController, Respawner, SafeTrail, ArenaTracker
+    Death/NoDeathPenalty/            NoDeathPenaltyFeature, NoDeathPenaltyPatches (bag prefix/postfix), NoDeathPenaltyTranspiler
+    Hud/BossHPNumbers/               BossHPNumbersFeature, HPNumber (own overlay canvas, read in LateUpdate; no patches)
+    Loot/LootMagnet/                 LootMagnetFeature, LootMagnetPatches (DropItem.Update prefix)
+    Loot/JinMultipliers/             JinMultipliersFeature, JinMultipliersPatches (AddGold prefix, Trade/UpdateView postfixes)
 ```
+
+The features were renamed on 2026-10-17: Respawn → RespawnNearDeath, ParryWindow → PerfectParryWindow,
+AnyDirectionParry → ParryFromBehind, Pickup → LootMagnet, HPNumbers → BossHPNumbers, AirDash → EarlyAirDash,
+HealSpeed → FastHeal (their `.cfg` sections too; mine were migrated by hand). `research/` and older commits use the
+old names.
 
 Conventions (keep them):
 
-- A feature lives in `Features/<Name>/`: `<Name>Feature.Init(ConfigFile)` binds its section with
-  `new ConfigSection(config, "<Name>")` and registers its F9 lines with `DebugTools.AddDumpSection`;
-  `<Name>Patches` holds only Harmony patches that forward to the feature. Add the Init call to `Plugin.Awake`
-  and `Patch("<Name>", typeof(<Name>Patches), "<original mod GUID>", ...)` to `Plugin.Start`.
+- A feature lives in `Features/<Group>/<Name>/`: `<Name>Feature.Init(ConfigFile)` binds its section with
+  `new ConfigSection(config, "<Name>", MenuCategory.<Group>, "<Title shown in F1>")` and registers its F9 lines
+  with `DebugTools.AddDumpSection`; `<Name>Patches` holds only Harmony patches that forward to the feature. Add
+  the Init call to `Plugin.Awake` (where it sits sets its place within its group) and
+  `Patch("<Name>", typeof(<Name>Patches), "<original mod GUID>", ...)` to `Plugin.Start`.
+- The F1 menu (ConfigurationManager 18.3) groups entries by their `Category` and sorts the groups by name; each
+  group title is drawn centred, so `MenuCategory` names like `--------- Combat ---------` act as separators.
+  Within a group, entries go by `Order` (one global counter in `ConfigSection`, so in binding order). A feature's
+  `Enabled` entry is labelled with the feature's title, its other entries are indented (`DispName`), and labels
+  come from the key's words (`BossHPFontSize` → "Boss HP font size") unless `name:` is given.
 - `Plugin.Start` patches each feature with its own Harmony instance (`diegorv.NineSolsQoL.<Name>`): a feature
   whose patching fails is undone on its own, a feature whose original mod is loaded
   (`Chainloader.PluginInfos`) is skipped with a warning, and a class that patches nothing is an error. Harmony
@@ -191,7 +203,7 @@ Conventions (keep them):
   class of its own: HarmonyX's `PatchClassProcessor.BulkPatch` throws "You cannot combine TargetMethod, TargetMethods
   or [HarmonyPatchAll] with individual annotations". Pass a feature's classes together,
   `Patch("<Name>", new[] { typeof(A), typeof(B) }, ...)`: one Harmony instance, all or nothing.
-- A feature that patches nothing (HPNumbers) gets `Active = !IsReplaced("<Name>", "<original GUID>")` in
+- A feature that patches nothing (BossHPNumbers) gets `Active = !IsReplaced("<Name>", "<original GUID>")` in
   `Plugin.Start`, runs from `Plugin.LateUpdate` and destroys what it created in `Plugin.OnDestroy`.
 - Config: `Enabled` first, a description that states the vanilla value and what changes, numbers with
   `AcceptableValueRange` (slider), everything read at call time so F1 changes apply live. Debug entries are
@@ -200,7 +212,7 @@ Conventions (keep them):
   missing one is logged once and only that feature stops.
 - Never read `X.Instance` of a `SingletonBehaviour` without `X.IsAvailable()`.
 - Every method called from a patch catches its exceptions (the game's own exceptions, e.g. its index error in
-  ParryWindow, are left as they are).
+  PerfectParryWindow, are left as they are).
 - Off = vanilla exactly, and hot reload must leave nothing behind: no writes to assets (ScriptableObject,
   StatData) or pooled objects unless the game itself resets them. Prefer transpilers that replace one read, or
   postfixes on return values, over mutating game state.
@@ -214,20 +226,20 @@ Conventions (keep them):
 
 | Feature | Config `[Section]` | How it works |
 |---|---|---|
-| Respawn | `Enabled`, `BossRespawnOutsideArena` | Ordinary deaths: quick revive on the last safe ground (`PlayerDeadState.Revive` prefix). Boss deaths: reload the scene and spawn just outside the arena. Details below. |
-| ParryWindow | `Enabled`, `PerfectParryFrames` (1-30, default 12) | Transpiler in `PlayerParryState.Parried` replaces the read `spamDatas[spamLevel]` with `PerfectWindow(windows, level, elapsed)`; every non-zero window × frames/8 (12 → 200/150 ms), zeros (anti-mash) kept. `[parry]` Debug line per parry. Also applies in the Yingzhao leaderboard challenge (my choice). |
-| AnyDirectionParry | `Enabled` | Postfix on `EffectDealer.FacingRuleCheck(DamageDealer, Vector3, Vector2)`: a failed check becomes true when the instance is `Player.i.health.parryDealer`. Always player-only. |
+| RespawnNearDeath | `Enabled`, `BossRespawnOutsideArena` | Ordinary deaths: quick revive on the last safe ground (`PlayerDeadState.Revive` prefix). Boss deaths: reload the scene and spawn just outside the arena. Details below. |
+| PerfectParryWindow | `Enabled`, `PerfectParryFrames` (1-30, default 12) | Transpiler in `PlayerParryState.Parried` replaces the read `spamDatas[spamLevel]` with `PerfectWindow(windows, level, elapsed)`; every non-zero window × frames/8 (12 → 200/150 ms), zeros (anti-mash) kept. `[parry]` Debug line per parry. Also applies in the Yingzhao leaderboard challenge (my choice). |
+| ParryFromBehind | `Enabled` | Postfix on `EffectDealer.FacingRuleCheck(DamageDealer, Vector3, Vector2)`: a failed check becomes true when the instance is `Player.i.health.parryDealer`. Always player-only. |
 | JinMultipliers | `Enabled`, `MonsterDrops`, `TransmuteUntoWealth`, `Selling` (1-1000, default 1; mine 100/200/100) | `AddGold` prefix multiplies Monster/Chest coins and FooExplode; `MerchandiseData.Trade` postfix adds the rest for sales (type 販賣 with a `mainMaterial`, paid in the gold field); `MerchandiseItemButton.UpdateView` postfix shows the multiplied price. Death bag and purchases untouched. |
-| Pickup | `Enabled`, `Delay` (0-3 s, default 0.5) | `DropItem.Update` prefix starts the game's own flight (`ForceFlyToTargetTurnOffSolid`, `flyToTarget = CenterAnchor`, `FlyToPicker`) for value drops (`AbstractDropping` or `DropArrow`) with touch pickup; timer = the game's `_forceFlyToPlayerCounter`; no flights while loading or dead; flying drops wait in the air while Yi is dead. All loose drops, like FarawayPickup (my choice). |
+| LootMagnet | `Enabled`, `Delay` (0-3 s, default 0.5) | `DropItem.Update` prefix starts the game's own flight (`ForceFlyToTargetTurnOffSolid`, `flyToTarget = CenterAnchor`, `FlyToPicker`) for value drops (`AbstractDropping` or `DropArrow`) with touch pickup; timer = the game's `_forceFlyToPlayerCounter`; no flights while loading or dead; flying drops wait in the air while Yi is dead. All loose drops, like FarawayPickup (my choice). |
 | NoDeathPenalty | `Enabled` | Transpiler on the async `PlayerDeathPenalty`'s `MoveNext` (found through `AsyncStateMachineAttribute`) points its two `CurrentGold = 0` / `CurrentExp = 0` calls at helpers that skip them when the death decided to keep; the rest of the penalty (delay, deathCount, AutoSave, ResetDeathPenalty) stays vanilla. Prefix + postfix on `PlayerDeadRecord.StorePlayerDataBeforeDead` take the decision at death (`Enabled` and the transpiler matched, kept in a static until the penalty) and empty the bag only when the game stored a new one (`CanStoreDeadRecord`). Bag still spawns, empty, no option (my choice). |
-| HPNumbers | `Enabled`; `BossHP` (on) and `BossInternalHP` (off), each with `Position` (pixels of a 1920x1080 screen, left end of the number), `FontSize` (8-72, 19), `Color` | Like MicheliniDev's HPNumbers: TMP texts on a canvas of our own (ScreenSpaceOverlay + CanvasScaler 1920x1080, registered in RCGLifeCycle, destroyed on unload), read in `LateUpdate`, text rebuilt only when the int changes. The boss is the one whose bar the game shows (`monsterHpUI.CurrentBossHP.bindingPosture`: `GetPostureValue()`, `InternalInjury`); everything hides with the HUD (`playerInGameUIDisplayVote.Result`). No Yi numbers and current value only (my choice). Off when `HPNumbers` (the original's GUID) is loaded. |
-| AirDash | `Enabled` (default **off**, my choice) | The game has its own air dash (one per air time: `CanRoll` needs `airDodgeCount == 0`, refilled by `ResetJumpAndDash`), gated by the `RollDodgeInAirUpgrade` ability, unlocked later in the game. A transpiler swaps the one `RollDodgeInAirUpgrade.IsActivated` read in `Player.DodgeCheck` (IL_0054/IL_0059) for `AirDashUnlocked(upgrade)` = the game's getter OR (`Enabled` and not `IsAcquired`): only before the upgrade is acquired, so once it is, the game's own rules (challenge ability packs, unequip, conditions) decide again. With the Down Dash jade, down dashes are unlimited (the game's own `CanDownDash`). The ability is never written (no save change; UI and skill tree still see it locked). `[air dash]` Debug line when the mod made the difference. |
-| HealSpeed | `Enabled` (default on) | Heal at the Quick Dose jade's speed without the jade (my choice; no multiplier, no stacking). `PlayerDrinkPotionState.OnStateEnter` sets `animator.speed = 1.66666f` when its private `isSpeedUpHeal` (`SpeedUpHealJade.IsActivated`) is true; a transpiler swaps that one call for `SpeedUpHeal(state)` = the jade's getter OR `Enabled`. The jade the state checks is `(Jade Data) Fast Pipe 速藥玉` (seen in game with F9). `[heal]` Debug line when the mod made the difference. |
+| BossHPNumbers | `Enabled`; `BossHP` (on) and `BossInternalHP` (off), each with `Position` (pixels of a 1920x1080 screen, left end of the number), `FontSize` (8-72, 19), `Color` | Like MicheliniDev's HPNumbers: TMP texts on a canvas of our own (ScreenSpaceOverlay + CanvasScaler 1920x1080, registered in RCGLifeCycle, destroyed on unload), read in `LateUpdate`, text rebuilt only when the int changes. The boss is the one whose bar the game shows (`monsterHpUI.CurrentBossHP.bindingPosture`: `GetPostureValue()`, `InternalInjury`); everything hides with the HUD (`playerInGameUIDisplayVote.Result`). No Yi numbers and current value only (my choice). Off when `HPNumbers` (the original's GUID) is loaded. |
+| EarlyAirDash | `Enabled` (default **off**, my choice) | The game has its own air dash (one per air time: `CanRoll` needs `airDodgeCount == 0`, refilled by `ResetJumpAndDash`), gated by the `RollDodgeInAirUpgrade` ability, unlocked later in the game. A transpiler swaps the one `RollDodgeInAirUpgrade.IsActivated` read in `Player.DodgeCheck` (IL_0054/IL_0059) for `AirDashUnlocked(upgrade)` = the game's getter OR (`Enabled` and not `IsAcquired`): only before the upgrade is acquired, so once it is, the game's own rules (challenge ability packs, unequip, conditions) decide again. With the Down Dash jade, down dashes are unlimited (the game's own `CanDownDash`). The ability is never written (no save change; UI and skill tree still see it locked). `[air dash]` Debug line when the mod made the difference. |
+| FastHeal | `Enabled` (default on) | Heal at the Quick Dose jade's speed without the jade (my choice; no multiplier, no stacking). `PlayerDrinkPotionState.OnStateEnter` sets `animator.speed = 1.66666f` when its private `isSpeedUpHeal` (`SpeedUpHealJade.IsActivated`) is true; a transpiler swaps that one call for `SpeedUpHeal(state)` = the jade's getter OR `Enabled`. The jade the state checks is `(Jade Data) Fast Pipe 速藥玉` (seen in game with F9). `[heal]` Debug line when the mod made the difference. |
 | DashInvulnerability | `Enabled` (on), `InvulnerabilityAfterDash` (0.05-0.5 s, default 0.1, my choice; vanilla 0.05) | I asked for invulnerability during the dash: the game already has it, and the F9/log diagnostics showed the hits came right after it (the Spear Horse's `SlashDamage`, always ~0.05 s after the receivers came back). A transpiler swaps the one `ldc.r4 0.05` between `ldftn DodgeEnd` and `Timer.AddTask` in `PlayerRollState.OnStateExit` for `InvulnerabilityAfterDash()`; a prefix skips a `DodgeEnd` that fires while a new dash (not weak) is under way (the timer has no owner, so the previous dash's end would cut the new one's invulnerability). A prefix on `Player.OnTakeDamage` logs `[dash]` hits during or right after a dash. With 0.1 s, two of three slash hits still landed ~0.05 s after the window (0.2 s would cover them); I kept 0.1. |
 
 TrueDamage was **dropped** (it makes the game harder); its report stays in `research/truedamage.md`.
 
-### Respawn feature, in short
+### RespawnNearDeath, in short
 
 1. Prefix `PlayerDeadState.OnStateEnter` → `DeathSnapshot.Record()` (position, last safe ground, level, boss
    fight: `monsterHpUI.CurrentBossHP != null` or an engaged monster tagged "Boss").
@@ -277,7 +289,7 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
   `Player.i.ResetDeathPenalty()` (the only writer that clears `_lastNeedDeathPenalty`).
 - Callers, all `if (IsNeedDeathPenalty)`: `GameCore.InitializeGameLevel` (every scene load), `DebugFastRevive` (debug
   mode), our `Respawner.QuickReviveAt`. Maps with the game's own quick revive defer it to the next scene load.
-- That AutoSave is the only save after most deaths with our Respawn (quick revive and boss reload skip the Root
+- That AutoSave is the only save after most deaths with our RespawnNearDeath (quick revive and boss reload skip the Root
   Node's save): a design that skipped the whole penalty would lose the kept Jin on quit.
 - `StorePlayerDataBeforeDead` runs at death only when the death has a penalty (`NeedDeathPenaltyCheck`: not in memory
   mode, VR challenge or with `DeathPanaltyImmune`) and returns early when `CanStoreDeadRecord` fails (the record still
@@ -324,7 +336,7 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
   UNCONFIRMED).
 - The HUD shows while `UIManager.playerInGameUIDisplayVote.Result` (public `RuntimeConditionVote`) is true: an AND
   of the gameplay input state (votes false on pause, map, dialogue, cutscene, death, loading), the "show gameplay
-  UI" setting, the area name banner and a few scripted scenes. HPNumbers hides with it (seen in game).
+  UI" setting, the area name banner and a few scripted scenes. BossHPNumbers hides with it (seen in game).
 - Back to title destroys every GameObject not registered with `RCGLifeCycle.DontDestroyForever` (which registers
   the object and the children it has at that moment).
 
@@ -359,9 +371,12 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 
 ## What comes next
 
-Only Teleport is left (then release polish, see Open items).
+Only TeleportFromAnyNode is left (then release polish, see Open items).
 
-### Teleport (research: `research/teleport.md`)
+### TeleportFromAnyNode (research: `research/teleport.md`)
+
+It goes in `Features/Travel/TeleportFromAnyNode/`, in a new `MenuCategory.Travel` group
+(`--------- Travel ---------`), unless I choose another group.
 
 What I want: **teleport from any Root Node where the game shows the Pavilion button, and remember the node I
 left so "Last Node" brings me back.** Today the node list only works from the Pavilion (the game's hub), so a
@@ -406,10 +421,10 @@ What the research found:
 
 ## Open items
 
-- Pickup: the "flying drops wait while Yi is dead" path is verified by review only, not seen in game.
-- Pickup: health, qi and ammo drops fly in even when full and the excess is wasted (like FarawayPickup;
+- LootMagnet: the "flying drops wait while Yi is dead" path is verified by review only, not seen in game.
+- LootMagnet: health, qi and ammo drops fly in even when full and the excess is wasted (like FarawayPickup;
   accepted). Possible improvement: leave them on the ground while the resource is full.
-- Pickup: the F9 list of nearby drops was a one-off check (the bag is ignored, seen in game): remove it at
+- LootMagnet: the F9 list of nearby drops was a one-off check (the bag is ignored, seen in game): remove it at
   release polish.
 - JinMultipliers: Transmute Unto Wealth and selling not yet seen in the log (`[jin] Transmute Unto Wealth`,
   `[jin] sold`; `is not a sale` would mean the 3D printer uses another trade type).
@@ -426,25 +441,25 @@ What the research found:
   zeroed Jin (on, then off). Fixing it needs one more patch (the pending flag before `NeedDeathPenaltyCheck`);
   whether `CanStoreDeadRecord` can flip between two deaths without a scene load is UNCONFIRMED. An unretrieved bag
   from a vanilla death is overwritten by the next death, as in vanilla.
-- Respawn for other bosses: BossArea bosses, FSM bosses (Yi Gung, Jee, Jiequan), A4_S5 (fight starts on load),
+- RespawnNearDeath for other bosses: BossArea bosses, FSM bosses (Yi Gung, Jee, Jiequan), A4_S5 (fight starts on load),
   Goumang (locked doors). They fall back to the scene entrance today; start with an F9 dump at the arena.
 - Lag: with only our mod there were no frames over 100 ms. With chatty mods the BepInEx console is the prime
   suspect: compare `[hitch]` lines and try `[Logging.Console] Enabled = false`.
 - History: commit `1712573` ("Remove old prompt") carries part of the Pickup code and does not build alone;
   `31a03bc` completes it.
-- The HPNumbers, AirDash and HealSpeed reviews are applied (`1617416`, `defc3c8`, `8277459`). DashInvulnerability's
-  review was started on its first version (without the transpiler): if `git log` has no "Apply the
-  DashInvulnerability review findings" commit, review the feature's current diff (transpiler included).
+- Every feature's review is applied: HPNumbers, AirDash and HealSpeed (now BossHPNumbers, EarlyAirDash,
+  FastHeal) in `1617416`, `defc3c8`, `8277459`, DashInvulnerability in `366102a`. The rename itself was checked
+  by building, reloading and reading the log, not by a review.
 - Release polish later: `DebugLogging` off by default, Thunderstore namespace/websiteUrl/icon, version,
   remove one-off dump lines.
 
 ## First steps for the new session
 
-1. Read this file, `README.md` and the code under `Source/` (the AirDash and HealSpeed transpilers are the
+1. Read this file, `README.md` and the code under `Source/` (the EarlyAirDash and FastHeal transpilers are the
    pattern to copy for "make one game check pass").
 2. Decompile the game into the session scratchpad (command above).
 3. Read the end of `LogOutput.log` to see where I left off, and `git log --oneline -10`.
-4. Start **Teleport** (see "What comes next"): read its research and checkers, clone the two originals into the
+4. Start **TeleportFromAnyNode** (see "What comes next"): read its research and checkers, clone the two originals into the
    scratchpad, verify the key facts yourself, and give me the synthesis in Portuguese. Then the F9 diagnostic for
    the buttons' wiring (ask me to sit at a Root Node and press F9, and also F9 with the pause menu's teleport tab),
    and only then the plan.

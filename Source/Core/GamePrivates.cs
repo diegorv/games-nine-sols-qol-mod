@@ -22,11 +22,11 @@ internal static class GamePrivates {
 
     private static readonly Lazy<DropItemPrivates?> DropItemAccess = new(DropItemPrivates.Find);
 
-    // The private parts of DropItem the pickup feature uses, or null when a game update renamed one
+    // The private parts of DropItem LootMagnet uses, or null when a game update renamed one
     public static DropItemPrivates? DropItems => DropItemAccess.Value;
 
     // The game's perfect-parry windows in seconds, indexed by PlayerParryState.spamLevel. Read only:
-    // the parry window feature never changes the array.
+    // PerfectParryWindow never changes the array.
     public static float[]? ParryWindows(PlayerParryState state) =>
         ParryWindowTable.Value is { } field ? field(state) : null;
 
