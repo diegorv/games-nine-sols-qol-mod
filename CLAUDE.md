@@ -125,7 +125,7 @@ Paths to the game, the profile and the log are in `..\CLAUDE.md`; build and Scri
 - Runtime: BepInEx 5.4.23.5, HarmonyX 2.9.0 in `<profile>\BepInEx\core` (we compile against HarmonyX 2.7 from
   NuGet), ConfigurationManager 18.3.1. CI (`.github/workflows/build.yml`) builds against
   `nine-sols-modding/libs-stripped` (it has UniTask, Unity.TextMeshPro and UnityEngine.UI).
-- Installed in the dev profile (2026-10-18): BepInExPack, ScriptEngine, ConfigurationManager, UnityExplorer (an empty folder), the bepinex-mcp bridge (`scripts\BepInExMCP.dll`), and NineSolsAPI (disabled once `HideManagerGameObject = true` is tested). The
+- Installed in the dev profile (2026-10-18): BepInExPack, ScriptEngine, ConfigurationManager, UnityExplorer (an empty folder), the bepinex-mcp bridge (`scripts\BepInExMCP.dll`), NineSolsAPI disabled, and `HideManagerGameObject = true` in `BepInEx.cfg` (tested on 2026-10-18: startup, F6, quit to title, F6). The
   originals our features replace are no longer installed. I play at 1920x1080.
 - I start the game from r2modman, load a save and press **F6 once**; after that every build hot-reloads the mod.
   Touching the DLL in `scripts` (`(Get-Item dll).LastWriteTime = Get-Date`) also reloads it, e.g. after editing
@@ -139,7 +139,7 @@ Paths to the game, the profile and the log are in `..\CLAUDE.md`; build and Scri
   registers it with `RCGLifeCycle.DontDestroyForever`, as NineSolsAPI's Awake did (`NineSolsAPICore.cs:64, 85` in
   1.3.1, which also turns Steam achievements off by default). That covers a release install (tested: boot, F1,
   quit to title, reload). Under ScriptEngine the mod loads only after F6, too late for the startup, so the dev
-  profile needs `HideManagerGameObject = true` in `BepInEx.cfg` (or NineSolsAPI). A reinstall of BepInEx also
+  profile has `HideManagerGameObject = true` in `BepInEx.cfg` (NineSolsAPI would also do). A reinstall of BepInEx also
   resets ScriptEngine's `EnableFileSystemWatcher`/`AutoReloadDelay` and deletes our `.cfg`.
 - Keys: **F1** config menu, **F9** our dump, **F8** opens one of the game's own debug screens.
 - The game spams `Adding null Transform to TransformAccessArray` (vanilla). The log uses my system's decimal
