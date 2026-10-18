@@ -166,6 +166,7 @@ Source/
     Pickup/                  PickupFeature, PickupPatches (DropItem.Update prefix)
     NoDeathPenalty/          NoDeathPenaltyFeature, NoDeathPenaltyPatches (bag prefix/postfix), NoDeathPenaltyTranspiler
     HPNumbers/               HPNumbersFeature, HPNumber (own overlay canvas, read in LateUpdate; no patches)
+    AirDash/                 AirDashFeature, AirDashPatches (Player.DodgeCheck transpiler)
 ```
 
 Conventions (keep them):
@@ -212,6 +213,7 @@ Conventions (keep them):
 | Pickup | `Enabled`, `Delay` (0-3 s, default 0.5) | `DropItem.Update` prefix starts the game's own flight (`ForceFlyToTargetTurnOffSolid`, `flyToTarget = CenterAnchor`, `FlyToPicker`) for value drops (`AbstractDropping` or `DropArrow`) with touch pickup; timer = the game's `_forceFlyToPlayerCounter`; no flights while loading or dead; flying drops wait in the air while Yi is dead. All loose drops, like FarawayPickup (my choice). |
 | NoDeathPenalty | `Enabled` | Transpiler on the async `PlayerDeathPenalty`'s `MoveNext` (found through `AsyncStateMachineAttribute`) points its two `CurrentGold = 0` / `CurrentExp = 0` calls at helpers that skip them when the death decided to keep; the rest of the penalty (delay, deathCount, AutoSave, ResetDeathPenalty) stays vanilla. Prefix + postfix on `PlayerDeadRecord.StorePlayerDataBeforeDead` take the decision at death (`Enabled` and the transpiler matched, kept in a static until the penalty) and empty the bag only when the game stored a new one (`CanStoreDeadRecord`). Bag still spawns, empty, no option (my choice). |
 | HPNumbers | `Enabled`; `BossHP` (on) and `BossInternalHP` (off), each with `Position` (pixels of a 1920x1080 screen, left end of the number), `FontSize` (8-72, 19), `Color` | Like MicheliniDev's HPNumbers: TMP texts on a canvas of our own (ScreenSpaceOverlay + CanvasScaler 1920x1080, registered in RCGLifeCycle, destroyed on unload), read in `LateUpdate`, text rebuilt only when the int changes. The boss is the one whose bar the game shows (`monsterHpUI.CurrentBossHP.bindingPosture`: `GetPostureValue()`, `InternalInjury`); everything hides with the HUD (`playerInGameUIDisplayVote.Result`). No Yi numbers and current value only (my choice). Off when `HPNumbers` (the original's GUID) is loaded. |
+| AirDash | `Enabled` (default **off**, my choice) | The game has its own air dash (one per air time: `CanRoll` needs `airDodgeCount == 0`, refilled by `ResetJumpAndDash`), gated by the `RollDodgeInAirUpgrade` ability, unlocked later in the game. A transpiler swaps the one `RollDodgeInAirUpgrade.IsActivated` read in `Player.DodgeCheck` (IL_0054/IL_0059) for `AirDashUnlocked(upgrade)` = the game's getter OR `Enabled`. The ability is never written (no save change; UI and skill tree still see it locked). `[air dash]` Debug line when the mod made the difference. |
 
 TrueDamage was **dropped** (it makes the game harder); its report stays in `research/truedamage.md`.
 
@@ -331,7 +333,7 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 
 ## What comes next
 
-Suggested order: Teleport → AirDash → HealSpeed (ask me; I may reorder).
+Suggested order: HealSpeed (in progress) → Teleport (ask me; I may reorder).
 
 ### Teleport (research: `research/teleport.md`)
 
@@ -358,23 +360,19 @@ What the research found:
 - Original GUIDs: `nozwock.TeleportFromAnyNode`; Ixrec's `TeleportFromAnywhere` is an alternative (expected
   GUID `TeleportFromAnywhere`).
 
-### AirDash and HealSpeed (my ideas; research: `research/airdash.md`, `research/healspeed.md`)
+### HealSpeed (my idea; research: `research/healspeed.md`, verified in `research/verification-summary-airdash-healspeed.md`)
 
-- **AirDash**: today Yi only dashes on solid ground (as far as I know; I have not finished the game, so a late
-  unlock is possible). Wanted: **one dash per jump, with the ground dash's animation, recharged by touching
-  ground, a wall or the like**. `Player.ResetJumpAndDash(bool, bool)` exists (e.g. called on parry), which
-  suggests an allowance that resets.
-- **HealSpeed**: healing with the pipe should take less time: a multiplier in F1, default 0.5 (half). The pipe
-  animation must still look right: if the heal is driven by animation events, speed up the whole animation;
-  if by timers, scale the timers and check the animation is not cut.
-- Both reports are verified: `research/<feature>.verify-a.md` and `.verify-c.md`, summed up in
-  `research/verification-summary-airdash-healspeed.md`.
-- HealSpeed: I saw the **Quick Dose Jade** in the game (it speeds up healing); look at it first. The research
-  already found the mechanism (`research/healspeed.md` [C27]): `PlayerDrinkPotionState.OnStateEnter` sets
-  `player.animator.speed = 1.66666f` when the state's own `SpeedUpHealJade` wrapper is active (heal in about
-  0.6 of the time); `PlayerMainAbilityCollection.SpeedUpHealJade` is never read. That this wrapper is the "Quick
-  Dose" jade is UNCONFIRMED (prefab): check with the jade equipped. The surgical option uses the same mechanism:
-  a postfix on `OnStateEnter` multiplying the speed vanilla just wrote, so it stacks with the jade.
+Decided with me: **heal with the pipe at the Quick Dose jade's speed without equipping it, on by default**; with
+the jade equipped the speed is the same (no stacking). I equipped the jade in game and found its speed good,
+so this replaces the multiplier planned before.
+
+- The game's mechanism (`research/healspeed.md` [C27]): `PlayerDrinkPotionState.OnStateEnter` does
+  `ldarg.0; call get_isSpeedUpHeal; brfalse` (IL_0016-IL_001C) and then `player.animator.speed = 1.66666f`; the
+  private getter is `this.SpeedUpHealJade.IsActivated` (a public `AbilityWrapper` struct field of the state:
+  `AbilityData && AbilityData.IsActivated`), called nowhere else. `OnStateExit` sets the speed back to 1. The heal
+  itself happens at the clip's `Done` animation event, so the whole animation simply plays faster.
+- Plan: the AirDash pattern, a transpiler swapping that one call for `SpeedUpHeal(state)` = the jade's getter OR
+  `Enabled`. F9 shows the wrapper's ability asset name (confirms it is the Quick Dose jade).
 
 ---
 

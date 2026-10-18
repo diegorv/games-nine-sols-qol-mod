@@ -16,7 +16,7 @@ can be turned off. Work in progress. The player-facing description is in
 | HPNumbers | The boss's HP (and, if you want, its internal injury) as numbers | done | MicheliniDev's HPNumbers |
 | NoDeathPenalty | Never lose Jin or XP on death; the death bag still appears, empty | done | nozwock's NoDeathPenalty |
 | Teleport | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
-| AirDash | One dash in the air per jump, recharged by touching ground, walls and the like | planned | original |
+| AirDash | The game's own air dash (one per jump) before its upgrade; off by default | done | original |
 | HealSpeed | Healing with the pipe takes less time (multiplier) | planned | original |
 
 Every feature is our own implementation, written from the game's code. Ideas taken from other mods are credited
@@ -36,6 +36,9 @@ Source/
     UnityExtensions.cs       small helpers for logging Unity objects
     DebugTools.cs            [Debug] config, F9 dump, post-respawn watchdog, [hitch] frame logger
   Features/
+    AirDash/
+      AirDashFeature.cs      [AirDash] config, the check the game reads instead of its upgrade, dump section
+      AirDashPatches.cs      transpiler: Player.DodgeCheck asks the mod whether the air dash is unlocked
     AnyDirectionParry/
       AnyDirectionParryFeature.cs   [AnyDirectionParry] config, the player-only override, dump section
       AnyDirectionParryPatches.cs   postfix on the facing check that runs before a parry

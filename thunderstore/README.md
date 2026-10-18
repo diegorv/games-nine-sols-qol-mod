@@ -25,6 +25,12 @@ The boss's HP as a number while the game shows the boss bar, and its internal in
 of a 1920x1080 screen and scale with other resolutions). The numbers hide with the game's HUD: menus, the map,
 dialogues and cutscenes.
 
+## Air dash
+
+Off by default. The game gives Yi an air dash later on (one per jump, recharged when you land, touch a wall,
+ledge or rope, parry and so on). With `AirDash` on, you can use it before you get that upgrade. Nothing is
+unlocked in your save: turn it off and the game is back to its own rule.
+
 ## Parry window
 
 A perfect parry is easier to land: by default you can press parry up to 12 frames (200 ms) before a hit

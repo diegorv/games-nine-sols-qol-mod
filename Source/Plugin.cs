@@ -5,6 +5,7 @@ using BepInEx;
 using BepInEx.Bootstrap;
 using HarmonyLib;
 using NineSolsQoL.Core;
+using NineSolsQoL.Features.AirDash;
 using NineSolsQoL.Features.AnyDirectionParry;
 using NineSolsQoL.Features.HPNumbers;
 using NineSolsQoL.Features.JinMultipliers;
@@ -36,6 +37,7 @@ public class Plugin : BaseUnityPlugin {
         PickupFeature.Init(Config);
         NoDeathPenaltyFeature.Init(Config);
         HPNumbersFeature.Init(Config);
+        AirDashFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -58,6 +60,7 @@ public class Plugin : BaseUnityPlugin {
         Patch("Pickup", typeof(PickupPatches), "nozwock.FarawayPickup");
         Patch("NoDeathPenalty", new[] { typeof(NoDeathPenaltyPatches), typeof(NoDeathPenaltyTranspiler) },
             "nozwock.NoDeathPenalty");
+        Patch("AirDash", typeof(AirDashPatches));
         // Patches nothing: it only draws numbers
         HPNumbersFeature.Active = !IsReplaced("HPNumbers", "HPNumbers");
     }
