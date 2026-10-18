@@ -63,7 +63,7 @@ Source/
         ParryFromBehindPatches.cs  postfix on the facing check that runs before a parry
       DashInvulnerability/
         DashInvulnerabilityFeature.cs  [DashInvulnerability] config, the delay the dash reads
-        DashInvulnerabilityPatches.cs  transpiler on the dash's exit, prefix on DodgeEnd, hit diagnostics
+        DashInvulnerabilityPatches.cs  transpiler on the dash's exit, prefix on DodgeEnd
     Death/
       RespawnNearDeath/
         RespawnNearDeathFeature.cs  [RespawnNearDeath] config and dump section

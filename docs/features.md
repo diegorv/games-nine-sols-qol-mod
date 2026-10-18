@@ -55,8 +55,9 @@ came right after it (the Spear Horse's `SlashDamage`, always ~0.05 s after the r
 swaps the one `ldc.r4 0.05` between `ldftn DodgeEnd` and `Timer.AddTask` in `PlayerRollState.OnStateExit` for
 `InvulnerabilityAfterDash()`; a prefix skips a `DodgeEnd` that fires while a new dash (not weak) is under way (the
 timer has no owner, so the previous dash's end would cut the new one's invulnerability). A prefix on
-`Player.OnTakeDamage` logs `[dash]` hits during or right after a dash. With 0.1 s, two of three slash hits still
-landed ~0.05 s after the window (0.2 s would cover them); I kept 0.1.
+`Player.OnTakeDamage` logged `[dash]` hits during or right after a dash while I tuned it (removed after the 1.0.0
+audit): with 0.1 s, two of three slash hits still landed ~0.05 s after the window (0.2 s would cover them); I kept
+0.1.
 
 ## Death
 
