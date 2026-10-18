@@ -3,6 +3,10 @@
 Quality of life tweaks for Nine Sols: respawn near death, no death penalty, an easier perfect parry, loot magnet
 and more. Each one can be turned off in the config menu (F1), where they are grouped as below.
 
+> **An experimental, personal mod.** I made it entirely myself, with AI and with as much care as I could, to
+> play the game the way I like: these are the tweaks I wanted. If you want more options, I suggest the
+> original mods listed under Credits, at the end: they do more than this one.
+
 Installing it also installs NineSolsAPI (which keeps the game from unloading the mods when it returns to the
 title screen; note that it turns achievements off by default, in its own config) and the BepInEx
 ConfigurationManager (the F1 menu).

@@ -1,8 +1,15 @@
 # Nine Sols QoL
 
 BepInEx 5 + Harmony mod with quality of life tweaks for Nine Sols. Each feature has its own config section and
-can be turned off. Work in progress. The player-facing description is in
-[thunderstore/README.md](./thunderstore/README.md).
+can be turned off. The player-facing description is in [thunderstore/README.md](./thunderstore/README.md);
+it is on [Thunderstore](https://thunderstore.io/c/nine-sols/p/diegorv/NineSolsQoL/).
+
+> **An experimental, personal mod.** I made it entirely myself, with AI and with as much care as I could, to
+> play the game the way I like: these are the tweaks I wanted. If you want more options, I suggest the
+> original mods listed under [Credits and references](#credits-and-references): they do more than this one.
+>
+> Every change goes through the same process: the game's decompiled code is read first (the claims cite
+> `file:line`), the patch is the smallest one that does the job, it is reviewed, and it is tested in game.
 
 ## Features
 
