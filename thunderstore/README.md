@@ -10,8 +10,13 @@ Respawn near where you died instead of at the last Root Node.
 - Ordinary deaths: you get back up on the last safe ground before the death, in the same room.
 - Boss deaths: the room reloads so the boss fight resets, and you start right outside the arena.
 
-The death penalty is unchanged: your Jin and XP go into the death bag as usual, and you pick the bag up
-by interacting with it.
+The death penalty is the game's (your Jin and XP go into the death bag, which you pick up by interacting
+with it), unless No death penalty is on.
+
+## No death penalty
+
+You keep your Jin and XP when you die. The death bag still appears where you died, but empty: you can still
+pick it up, for the skills that react to that.
 
 ## Parry window
 

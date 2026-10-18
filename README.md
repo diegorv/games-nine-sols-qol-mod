@@ -14,7 +14,7 @@ can be turned off. Work in progress. The player-facing description is in
 | JinMultipliers | Multipliers for Jin drops, Transmute Unto Wealth and selling (recycling) | done | Ixrec's JinMultiplier |
 | Pickup | Loose drops fly to you from any distance | done | nozwock's FarawayPickup |
 | HPNumbers | Yi's and the boss's HP and internal injury as numbers | planned | MicheliniDev's HPNumbers |
-| NoDeathPenalty | Never lose Jin or XP on death; the death bag still appears, empty | planned | nozwock's NoDeathPenalty |
+| NoDeathPenalty | Never lose Jin or XP on death; the death bag still appears, empty | done | nozwock's NoDeathPenalty |
 | Teleport | Teleport from any Root Node, not just the Pavilion's | planned | nozwock's TeleportFromAnyNode |
 | AirDash | One dash in the air per jump, recharged by touching ground, walls and the like | planned | original |
 | HealSpeed | Healing with the pipe takes less time (multiplier) | planned | original |
@@ -42,6 +42,10 @@ Source/
     JinMultipliers/
       JinMultipliersFeature.cs  [JinMultipliers] config, the multiplied amounts, shop price, dump section
       JinMultipliersPatches.cs  AddGold prefix, shop trade and shop row postfixes
+    NoDeathPenalty/
+      NoDeathPenaltyFeature.cs     [NoDeathPenalty] config, the decision taken at each death, dump section
+      NoDeathPenaltyPatches.cs     prefix and postfix where the game fills the death bag: empties it
+      NoDeathPenaltyTranspiler.cs  transpiler: the death penalty skips its two lines that zero Jin and XP
     Pickup/
       PickupFeature.cs       [Pickup] config, starts the game's own flight for loose drops, dump section
       PickupPatches.cs       prefix on DropItem.Update
@@ -62,7 +66,10 @@ A new feature goes in `Features/<Name>/`: a `<Name>Feature` class that binds its
 `<Name>Patches` class with its Harmony patches, and the code they forward to. `Plugin.Awake` calls each
 feature's `Init`; `Plugin.Start` applies each feature's patches with its own Harmony instance, unless a mod the
 feature replaces is loaded (then the feature stays off and the log says why). Harmony only applies the methods
-declared in the `<Name>Patches` class itself, so patches must not go in nested classes.
+declared in the `<Name>Patches` class itself, so patches must not go in nested classes. A patch whose target is
+found by code (`[HarmonyTargetMethod]`, e.g. the state machine of an async method) needs a class of its own,
+because HarmonyX refuses it next to patches that name their target; `Plugin.Start` applies all of a feature's
+classes with its one Harmony instance.
 
 Every option is in the in-game config menu ([ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager),
 `F1`): one section per feature with `Enabled` first, a description that says the vanilla value, a range for
@@ -120,7 +127,7 @@ Mods whose ideas these features build on:
 | [JinMultiplier](https://github.com/Ixrec/NineSolsJinMultiplier) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/)) | Ixrec | MIT | JinMultipliers (the idea and the patch points, `AddGold` and the shop's gold income; ours only multiplies sales and shows the real amount in the shop) |
 | [FarawayPickup](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/FarawayPickup/)) | nozwock | GPL-3.0 | Pickup (idea only; ours starts the game's own touch-pickup flight and leaves no field changed on pooled drops) |
 | [HPNumbers](https://github.com/MicheliniDev/NineSols-HPNumbersMod) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/MicheliniDev/HPNumbers/)) | MicheliniDev | MIT | HPNumbers |
-| [NoDeathPenalty](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/)) | nozwock | GPL-3.0 | NoDeathPenalty (idea only) |
+| [NoDeathPenalty](https://github.com/nozwock/nine-sols-mods) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/)) | nozwock | GPL-3.0 | NoDeathPenalty (idea only; ours decides at each death, so it can be turned off at any time, and never empties an older bag) |
 | [NoDeathPenaltyNineSols](https://github.com/Baiker000/NoDeathPenaltyNineSols), the original nozwock's version builds on | Baiker000 | none stated | NoDeathPenalty (idea only) |
 | [TeleportFromAnyNode](https://github.com/nozwock/nine-sols-mods) | nozwock | GPL-3.0 | Teleport (idea only) |
 | [TeleportFromAnywhere](https://github.com/Ixrec/NineSolsTeleportFromAnywhere) ([Thunderstore](https://thunderstore.io/c/nine-sols/p/Ixrec/TeleportFromAnywhere/)) | Ixrec | MIT | Teleport (reference for edge cases) |

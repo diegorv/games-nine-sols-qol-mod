@@ -7,6 +7,7 @@ using HarmonyLib;
 using NineSolsQoL.Core;
 using NineSolsQoL.Features.AnyDirectionParry;
 using NineSolsQoL.Features.JinMultipliers;
+using NineSolsQoL.Features.NoDeathPenalty;
 using NineSolsQoL.Features.ParryWindow;
 using NineSolsQoL.Features.Pickup;
 using NineSolsQoL.Features.Respawn;
@@ -32,6 +33,7 @@ public class Plugin : BaseUnityPlugin {
         AnyDirectionParryFeature.Init(Config);
         JinMultipliersFeature.Init(Config);
         PickupFeature.Init(Config);
+        NoDeathPenaltyFeature.Init(Config);
         RegisterLifeCycle();
         initialized = true;
 
@@ -52,6 +54,8 @@ public class Plugin : BaseUnityPlugin {
         Patch("AnyDirectionParry", typeof(AnyDirectionParryPatches), "supidowagon.AnyDirectionParry");
         Patch("JinMultipliers", typeof(JinMultipliersPatches), "JinMultiplier");
         Patch("Pickup", typeof(PickupPatches), "nozwock.FarawayPickup");
+        Patch("NoDeathPenalty", new[] { typeof(NoDeathPenaltyPatches), typeof(NoDeathPenaltyTranspiler) },
+            "nozwock.NoDeathPenalty");
     }
 
     private void Update() {
@@ -64,10 +68,14 @@ public class Plugin : BaseUnityPlugin {
         Log.Info($"{MyPluginInfo.PLUGIN_NAME} unloaded");
     }
 
-    // Applies one feature's [HarmonyPatch] class, unless one of the mods it replaces (by GUID) is
+    private void Patch(string feature, Type patches, params string[] replacedMods) =>
+        Patch(feature, new[] { patches }, replacedMods);
+
+    // Applies one feature's [HarmonyPatch] classes, unless one of the mods it replaces (by GUID) is
     // loaded: then the feature stays off so the game is not patched twice for the same thing.
-    // Harmony only looks at the methods declared in that class, not at nested classes.
-    private void Patch(string feature, Type patches, params string[] replacedMods) {
+    // Harmony only looks at the methods declared in each class, not at nested classes. The classes
+    // share one Harmony instance, so a failure in any of them undoes all of them.
+    private void Patch(string feature, Type[] patches, params string[] replacedMods) {
         var loaded = replacedMods.FirstOrDefault(Chainloader.PluginInfos.ContainsKey);
         if (loaded != null) {
             Log.Warning($"{feature} is off because {loaded} is loaded and does the same");
@@ -77,7 +85,7 @@ public class Plugin : BaseUnityPlugin {
         var harmony = new Harmony($"{MyPluginInfo.PLUGIN_GUID}.{feature}");
         harmonies.Add(harmony);
         try {
-            harmony.PatchAll(patches);
+            foreach (var type in patches) harmony.PatchAll(type);
         } catch (Exception e) {
             // Harmony stops at the first method it cannot patch: undo the ones before it
             harmony.UnpatchSelf();
@@ -86,8 +94,12 @@ public class Plugin : BaseUnityPlugin {
         }
 
         var count = harmony.GetPatchedMethods().Count();
-        if (count == 0) Log.Error($"{feature} patched nothing: no [HarmonyPatch] method declared in {patches.Name}");
-        else Log.Debug($"{feature}: {count} game method(s) patched");
+        if (count == 0) {
+            Log.Error($"{feature} patched nothing: no [HarmonyPatch] method declared in " +
+                      string.Join(", ", patches.Select(p => p.Name)));
+        } else {
+            Log.Debug($"{feature}: {count} game method(s) patched");
+        }
     }
 
     // When going back to the title screen the game destroys every GameObject that is not

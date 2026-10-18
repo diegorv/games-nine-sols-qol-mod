@@ -15,6 +15,9 @@ current state of the mod, what was verified in the game code, and what comes nex
   the decompiled code, one focused question set each. They must cite file:line, quote the code, and mark as
   UNCONFIRMED anything that lives in scene, prefab, animation or asset data. Then confirm yourself the few facts
   the design depends on.
+- **Surgical patches.** Pick the option that changes the least game behaviour, at the known patch point (often the
+  original mod's): e.g. swap two calls inside a method rather than skip or replace the whole method. Don't invent
+  new mechanisms; a broader design only when the narrow one has a real blocker.
 - **One hypothesis at a time.** Change one thing, I test it in the game, you read the log.
 - **Instrument before fixing.** Logs and the F9 dump answer in minutes what guessing does not.
 - I test in the game. You read `LogOutput.log` directly from the profile (path below).
@@ -54,8 +57,8 @@ Every feature so far went through this and passed its in-game test on the first 
 10. Keep `README.md` (features table, code layout, credits) and `thunderstore/README.md` (player-facing) up to
     date. Mark a feature `done` after my in-game test.
 
-**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 18 Opus
-and 40 Haiku were unused at handoff). Use Opus for discovery and adversarial review, Haiku for checking
+**Sub-agent budget.** I grant it per session (last grant: 20 Opus + 40 Haiku for everything left; about 15 Opus
+and 37 Haiku were unused after NoDeathPenalty). Use Opus for discovery and adversarial review, Haiku for checking
 citations, completeness, runtime APIs and game facts. When I allow multi-agent orchestration, run discovery
 and review as Workflow scripts (pipeline: discovery agent → its verifiers in parallel; review: Opus + Haikus in
 parallel). Their results are files in `research/` or structured output, so your context stays small.
@@ -161,6 +164,7 @@ Source/
     AnyDirectionParry/       AnyDirectionParryFeature, AnyDirectionParryPatches (postfix)
     JinMultipliers/          JinMultipliersFeature, JinMultipliersPatches (AddGold prefix, Trade/UpdateView postfixes)
     Pickup/                  PickupFeature, PickupPatches (DropItem.Update prefix)
+    NoDeathPenalty/          NoDeathPenaltyFeature, NoDeathPenaltyPatches (bag prefix/postfix), NoDeathPenaltyTranspiler
 ```
 
 Conventions (keep them):
@@ -173,6 +177,10 @@ Conventions (keep them):
   whose patching fails is undone on its own, a feature whose original mod is loaded
   (`Chainloader.PluginInfos`) is skipped with a warning, and a class that patches nothing is an error. Harmony
   only applies methods declared in that class: **no nested patch classes**. Start does not patch if Awake failed.
+- A patch whose target is found by code (`[HarmonyTargetMethod]`, e.g. an async method's state machine) goes in a
+  class of its own: HarmonyX's `PatchClassProcessor.BulkPatch` throws "You cannot combine TargetMethod, TargetMethods
+  or [HarmonyPatchAll] with individual annotations". Pass a feature's classes together,
+  `Patch("<Name>", new[] { typeof(A), typeof(B) }, ...)`: one Harmony instance, all or nothing.
 - Config: `Enabled` first, a description that states the vanilla value and what changes, numbers with
   `AcceptableValueRange` (slider), everything read at call time so F1 changes apply live. Debug entries are
   `advanced`.
@@ -199,6 +207,7 @@ Conventions (keep them):
 | AnyDirectionParry | `Enabled` | Postfix on `EffectDealer.FacingRuleCheck(DamageDealer, Vector3, Vector2)`: a failed check becomes true when the instance is `Player.i.health.parryDealer`. Always player-only. |
 | JinMultipliers | `Enabled`, `MonsterDrops`, `TransmuteUntoWealth`, `Selling` (1-1000, default 1; mine 100/200/100) | `AddGold` prefix multiplies Monster/Chest coins and FooExplode; `MerchandiseData.Trade` postfix adds the rest for sales (type 販賣 with a `mainMaterial`, paid in the gold field); `MerchandiseItemButton.UpdateView` postfix shows the multiplied price. Death bag and purchases untouched. |
 | Pickup | `Enabled`, `Delay` (0-3 s, default 0.5) | `DropItem.Update` prefix starts the game's own flight (`ForceFlyToTargetTurnOffSolid`, `flyToTarget = CenterAnchor`, `FlyToPicker`) for value drops (`AbstractDropping` or `DropArrow`) with touch pickup; timer = the game's `_forceFlyToPlayerCounter`; no flights while loading or dead; flying drops wait in the air while Yi is dead. All loose drops, like FarawayPickup (my choice). |
+| NoDeathPenalty | `Enabled` | Transpiler on the async `PlayerDeathPenalty`'s `MoveNext` (found through `AsyncStateMachineAttribute`) points its two `CurrentGold = 0` / `CurrentExp = 0` calls at helpers that skip them when the death decided to keep; the rest of the penalty (delay, deathCount, AutoSave, ResetDeathPenalty) stays vanilla. Prefix + postfix on `PlayerDeadRecord.StorePlayerDataBeforeDead` take the decision at death (`Enabled` and the transpiler matched, kept in a static until the penalty) and empty the bag only when the game stored a new one (`CanStoreDeadRecord`). Bag still spawns, empty, no option (my choice). |
 
 TrueDamage was **dropped** (it makes the game harder); its report stays in `research/truedamage.md`.
 
@@ -245,6 +254,20 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 - Bosses: `PlayerWalkToTrigger` starts the fight for `BossLogic`, `Boss_SpearHorse_Logic`, `BossGouMangLogic`,
   `A1_S7_Logic`; others use `PlayerSensor`, `BossArea`, scene load or FSMs (Yi Gung, Jee, Jiequan).
 
+**Death penalty**
+- `PlayerGamePlayData.PlayerDeathPenalty` is `async void`; its body is `<PlayerDeathPenalty>d__32.MoveNext` (a
+  struct): after `UniTask.Delay(100)`, `data.deathCount += 1`, a Debug.Log, `ldloc.1; ldc.i4.0; call set_CurrentGold`
+  and the same for `set_CurrentExp` (once each, IL_00D9-IL_00E2, no labels), `AutoSave(FlagOnly).Forget()`,
+  `Player.i.ResetDeathPenalty()` (the only writer that clears `_lastNeedDeathPenalty`).
+- Callers, all `if (IsNeedDeathPenalty)`: `GameCore.InitializeGameLevel` (every scene load), `DebugFastRevive` (debug
+  mode), our `Respawner.QuickReviveAt`. Maps with the game's own quick revive defer it to the next scene load.
+- That AutoSave is the only save after most deaths with our Respawn (quick revive and boss reload skip the Root
+  Node's save): a design that skipped the whole penalty would lose the kept Jin on quit.
+- `StorePlayerDataBeforeDead` runs at death only when the death has a penalty (`NeedDeathPenaltyCheck`: not in memory
+  mode, VR challenge or with `DeathPanaltyImmune`) and returns early when `CanStoreDeadRecord` fails (the record still
+  holds an older bag). Bag spawn and pickup never read the contents: an empty bag spawns, shows on the map and gives
+  `AddGold(0)`/`GainExp(0)` (seen in game). `deathCount` has no reader in code.
+
 **Parry**
 - `PlayerParryState.Parried` (public virtual) tests `elapsed <= spamDatas[spamLevel] + 0f`; elapsed =
   `Time.time` − the latest buffered parry press (`PlayerInputCommandQueue`, presses expire after 0.5 s).
@@ -284,13 +307,15 @@ From the decompiled code unless marked otherwise ("seen in game" = F9 dump or lo
 - HarmonyX 2.9 `PatchAll(Type)` = `CreateClassProcessor(type, true).Patch()`; `[HarmonyPatch(type, "Name")]`
   resolves with `AccessTools.DeclaredMethod`; `AccessTools.MethodDelegate` builds open-instance delegates for
   private methods; there is no `AccessTools.AsyncMoveNext` (resolve state machines through
-  `AsyncStateMachineAttribute`).
+  `AsyncStateMachineAttribute`), and `MethodType.Enumerator` handles iterators and UniTask-returning methods, not
+  `async void`. `__state` is one local per patch declaring type, so a prefix and postfix in the same class share
+  it; postfixes run on every return path (not when the original throws).
 
 ---
 
 ## What comes next
 
-Suggested order: HPNumbers → NoDeathPenalty → Teleport → AirDash → HealSpeed (ask me; I may reorder).
+Suggested order: HPNumbers → Teleport → AirDash → HealSpeed (ask me; I may reorder).
 
 ### HPNumbers (research: `research/hpnumbers.md`)
 
@@ -320,29 +345,6 @@ What the research found:
   positions, the boss picked independently of the game's bar, numbers visible over menus.
 - The HUD prefab hierarchy (Canvas ancestor, scaler, layout groups) is UNCONFIRMED: check it with an F9 dump
   section or UnityExplorer before choosing between "attach to the bars" and "own overlay canvas".
-
-### NoDeathPenalty (research: `research/deathpenalty.md`)
-
-Decided with me: **Jin and XP never leave the player on death; the death bag still appears, empty** (for the
-skills that react to picking it up); **no option** about the bag. Nothing to pick up to get anything back.
-
-What the research found:
-- The zeroing is in the async state machine of `PlayerDeathPenalty` (`<PlayerDeathPenalty>d__32`): unique
-  `ldloc.1; ldc.i4.0; call set_CurrentGold` and the same for `set_CurrentExp`. Prefer a transpiler that swaps
-  those calls for a helper that checks the decision, over restoring gold afterwards (`AutoSave` serializes on a
-  worker thread: a restore races with the save).
-- A replacement must still `deathCount++`, `AutoSave(FlagOnly)` and `Player.i.ResetDeathPenalty()` (the only
-  writer that clears `_lastNeedDeathPenalty`).
-- Empty the bag **at death** (postfix on `StorePlayerDataBeforeDead`), only when its guard passed
-  (`CanStoreDeadRecord.IsValid`, read in a prefix), or an older unretrieved bag gets wiped.
-- Take the decision once at death and carry it to the penalty (they are 2+ s apart; vanilla quick-revive maps
-  apply the penalty only at the next scene load). Otherwise a toggle or hot reload in between duplicates (full
-  bag + kept gold) or loses everything.
-- If the transpiler does not match, also skip emptying the bag, or the player loses everything.
-- Our Respawn calls `PlayerDeathPenalty()` on quick revive; with this feature on it must keep the gold.
-- An empty bag still spawns, shows on the map and gives `GainExp(0)`/`AddGold(0)` with no events. The bag-pickup
-  skills ("Life Recovery", "Azure Recovery" in nozwock's README) are prefab data: UNCONFIRMED.
-- Original GUID: `nozwock.NoDeathPenalty`.
 
 ### Teleport (research: `research/teleport.md`)
 
@@ -378,8 +380,8 @@ What the research found:
 - **HealSpeed**: healing with the pipe should take less time: a multiplier in F1, default 0.5 (half). The pipe
   animation must still look right: if the heal is driven by animation events, speed up the whole animation;
   if by timers, scale the timers and check the animation is not cut.
-- The research workflow for both was started at the end of the last session and writes its reports to
-  `research/`. If a report is missing or has no verification section, run the discovery again.
+- Both reports are verified: `research/<feature>.verify-a.md` and `.verify-c.md`, summed up in
+  `research/verification-summary-airdash-healspeed.md`.
 
 ---
 
@@ -392,6 +394,14 @@ What the research found:
   release polish.
 - JinMultipliers: Transmute Unto Wealth and selling not yet seen in the log (`[jin] Transmute Unto Wealth`,
   `[jin] sold`; `is not a sale` would mean the 3D printer uses another trade type).
+- NoDeathPenalty: picking up an empty bag with the Life Recovery or Azure Recovery skill is not tested yet (I don't
+  have them). Their effects live in prefab FSMs; nothing in code reads the bag's contents, so they should still
+  trigger.
+- NoDeathPenalty, accepted limits: a hot reload between a death and its penalty (2 s, or until the next door on maps
+  with the game's own quick revive) loses that death's Jin (dev only). On such a map, a death with the feature off,
+  then a second death with it on where the game stores no bag (`CanStoreDeadRecord` fails) leaves the old full bag
+  and the kept Jin (duplication). An unretrieved bag from a vanilla death is overwritten by the next death, as in
+  vanilla.
 - Respawn for other bosses: BossArea bosses, FSM bosses (Yi Gung, Jee, Jiequan), A4_S5 (fight starts on load),
   Goumang (locked doors). They fall back to the scene entrance today; start with an F9 dump at the arena.
 - Lag: with only our mod there were no frames over 100 ms. With chatty mods the BepInEx console is the prime
