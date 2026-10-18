@@ -54,9 +54,18 @@ internal static class EarlyTeleportFeature {
             // The Teleport button also has an inverted one ("not in the final stage") that must stay as it is
             if (!Enabled.Value || condition.FinalResultInverted || !GameCore.IsAvailable()) return false;
             var core = GameCore.Instance;
-            if (core.savePanelUiController == null || !TeleportMenus.IsOnTeleportButton(condition, core)) return false;
+            if (core.savePanelUiController == null || !TeleportMenus.IsOnTeleportButton(condition, core) ||
+                !TeleportMenus.TabMenuAvailable()) {
+                return false;
+            }
+            // Only the unlock flag: a field of the teleport ability itself, read as it is (seen in game: its
+            // acquired field)
             var ability = TeleportMenus.TeleportAbility();
-            if (ability == null || ability.IsAcquired) return false;
+            var flag = condition.FieldBool;
+            if (ability == null || ability.IsAcquired || flag == null || flag.IsResultInverted ||
+                (UnityEngine.Object?)flag.flagBase != ability) {
+                return false;
+            }
 
             Log.Debug($"[early teleport] the Teleport button may show: '{ability.name}' is not acquired yet");
             return true;
@@ -76,13 +85,14 @@ internal static class EarlyTeleportFeature {
             ? "no button"
             : string.Join(", ", button.GetComponentsInChildren<GameFlagPropertyCondition>(true)
                 .Where(c => !c.FinalResultInverted && TeleportMenus.IsOnTeleportButton(c, core))
-                .Select(c => $"'{c.name}' {DescribeFlag(c.FieldBool)}"));
+                .Select(c => $"'{c.name}' {DescribeFlag(c.FieldBool, ability)}"));
         return new[] { $"EarlyTeleport: enabled={Enabled.Value} ability {abilityState} unlock flag {flags}" };
     }
 
-    private static string DescribeFlag(FlagFieldBoolEntry? entry) {
+    private static string DescribeFlag(FlagFieldBoolEntry? entry, PlayerAbilityData? ability) {
         if (entry == null) return "none";
         var owner = (UnityEngine.Object?)entry.flagBase;
-        return $"{(owner != null ? $"'{owner.name}'" : "none")}.{entry.fieldName}={entry.Value}";
+        return $"{(owner != null ? $"'{owner.name}'" : "none")}.{entry.fieldName}={entry.Value} " +
+               $"inverted={entry.IsResultInverted} isTheAbility={owner != null && owner == ability}";
     }
 }

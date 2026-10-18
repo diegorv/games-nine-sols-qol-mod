@@ -439,8 +439,9 @@ the discovery fan-out of "The process").
 - History: commit `1712573` ("Remove old prompt") carries part of the Pickup code and does not build alone;
   `31a03bc` completes it.
 - Every feature's review is applied: HPNumbers, AirDash and HealSpeed (now BossHPNumbers, EarlyAirDash,
-  FastHeal) in `1617416`, `defc3c8`, `8277459`, DashInvulnerability in `366102a`. The rename itself was checked
-  by building, reloading and reading the log, not by a review.
+  FastHeal) in `1617416`, `defc3c8`, `8277459`, DashInvulnerability in `366102a`, TeleportFromAnyNode and
+  EarlyTeleport in "Apply the Teleport review findings" (reports in `research/teleport.review*.md`). The rename
+  itself was checked by building, reloading and reading the log, not by a review.
 - TeleportFromAnyNode/EarlyTeleport, not seen in game yet: the story locks (Prison, after Lady Ethereal, final
   stage), and EarlyTeleport handing over to the game when `(Ability) 神遊系統` is acquired. The Teleport tab and
   button decisions log a few `[teleport]`/`[early teleport]` Debug lines per menu opening (each tab change runs

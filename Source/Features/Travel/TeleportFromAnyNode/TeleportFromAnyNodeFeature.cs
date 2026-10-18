@@ -46,7 +46,7 @@ internal static class TeleportFromAnyNodeFeature {
             }
 
             var onButton = TeleportMenus.IsOnTeleportButton(condition, core);
-            if (!onButton && !TeleportMenus.IsOnTeleportTab(condition)) return false;
+            if (onButton ? !TeleportMenus.TabMenuAvailable() : !TeleportMenus.IsOnTeleportTab(condition)) return false;
 
             var node = TeleportMenus.SittingNode(core);
             if (node == null || node == points.AGSavePoint || !TeleportMenus.PavilionButtonValid(core)) return false;
@@ -62,7 +62,8 @@ internal static class TeleportFromAnyNodeFeature {
 
     // Called before TeleportPointButton.SubmitImplementation, which starts the teleport and clears the Root Node
     // menu's node. Stores the node the player leaves as the Last Node, as the Pavilion button does
-    // (GameCore.TeleportToSavePoint with SaveLastItem). At the Pavilion the game refuses it and nothing changes.
+    // (GameCore.TeleportToSavePoint with SaveLastItem). Not from the Pavilion, which the game never stores as the
+    // Last Node (TeleportPointCollection.isValidLastSavedFlag).
     public static void RememberNodeLeft() {
         try {
             if (!Enabled.Value || !GameCore.IsAvailable()) return;

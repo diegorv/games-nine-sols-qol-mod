@@ -46,15 +46,24 @@ internal static class TeleportMenus {
         return tab != null && IsTeleportTab(tab);
     }
 
-    // The pause menu's Teleport tab, or null
+    // The pause menu's Teleport tab, or null. Looked up the way TabsUI.InitCheck does: TabsUI.AllItems stays empty
+    // until the pause menu first wakes up.
     public static UITabsItem? TeleportTab() {
         if (!UIManager.IsAvailable()) return null;
         var menu = UIManager.Instance.menuUI;
         if (menu == null || menu.tabsUI == null) return null;
-        foreach (var tab in menu.tabsUI.AllItems) {
-            if (tab != null && IsTeleportTab(tab)) return tab;
+        foreach (var tab in menu.tabsUI.GetComponentsInChildren<UITabsItem>(true)) {
+            if (IsTeleportTab(tab)) return tab;
         }
         return null;
+    }
+
+    // Whether the game lets the pause menu open (UIManager.ShowMenu does nothing otherwise). The Teleport button hides
+    // the Root Node menu before it asks for the pause menu, so without one the player would sit with no menu at all.
+    public static bool TabMenuAvailable() {
+        if (!UIManager.IsAvailable()) return false;
+        var available = UIManager.Instance.IsTabMenuAvailable;
+        return available != null && available.CurrentValue;
     }
 
     // The teleport ability the Teleport tab checks, or null
@@ -81,7 +90,8 @@ internal static class TeleportMenus {
                 continue;
             }
             var button = action.GetComponentInParent<UIControlButton>(true);
-            return button != null && button.IsAllValid && action.conditions.IsAllValid();
+            if (button == null) continue;
+            return button.IsAllValid && action.conditions.IsAllValid();
         }
         return false;
     }
