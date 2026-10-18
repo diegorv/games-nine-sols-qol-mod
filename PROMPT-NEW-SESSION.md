@@ -37,9 +37,11 @@ current state of the mod, what was verified in the game code, and what comes nex
 
 Every feature so far went through this and passed its in-game test on the first or second try.
 
-1. **Set up the session.** Decompile the game into the scratchpad (command below). Original mods' sources, when
+1. **Set up the session.** The decompiled game is already in `C:\c\dev\modding\ninesols\decompiled\` (check its
+   `BUILD.txt` against the game's Steam build; see "Decompiling the game"). Original mods' sources, when
    needed, go into their own empty scratchpad folders (`git clone --depth 1`), read only.
-2. **Research.** Every remaining feature already has a report in `research/` (see "What comes next"). Read it
+2. **Research.** Every remaining feature already has a report in `research/` (`C:\c\dev\modding\ninesols\research\`,
+   outside the repo; see "What comes next"). Read it
    and `research/verification-summary.md`. For a new feature, run the discovery fan-out first: 1 Opus agent per
    feature writes `research/<feature>.md` (numbered claims `[Cn]`, file:line citations, a "Patch options (facts
    only)" section), then 2 Haiku agents check it (one for citations, one for missing callers/writers/overloads).
@@ -79,13 +81,14 @@ Harmony mod (NineSolsQoL, repo C:\c\dev\NineSols-ExampleMod). Thoroughness: very
 RULES
 - Do not guess. Every claim must cite file path + line numbers and quote the relevant lines.
 - If something cannot be confirmed in code (scene, prefab, animation or asset data), mark it UNCONFIRMED and say why.
-- Read-only. Write only the report to <repo>\research\<feature>.md and dumps under <scratchpad>\agent-<topic>\.
+- Read-only. Write only the report to C:\c\dev\modding\ninesols\research\<feature>.md and dumps under <scratchpad>\agent-<topic>\.
 - Report: one "## Qn" section per question, numbered claims [C1].., then "## Surprises", then
   "## Patch options (facts only)" (signature, access, virtual, overloads, IL size; safe/risky facts: does
   turning the feature off restore vanilla, does it survive unpatch/re-patch, does it leave objects modified).
 
 WHERE THE CODE IS
-- <scratchpad>\decomp\Assembly-CSharp\, \rcg.rcgmakercore.Runtime\, \RCG_General\ (one file per type; grep the whole folder)
+- C:\c\dev\modding\ninesols\decompiled\Assembly-CSharp\, \rcg.rcgmakercore.Runtime\, \RCG_General\ (one file per type; grep the whole folder)
+- Third-party libraries (UniTask, DOTween, I2, QFSW...): C:\c\dev\modding\ninesols\decompiled-ilspy\libs\
 - Game DLLs: J:\SteamLibrary\steamapps\common\Nine Sols\NineSols_Data\Managed
 - For compiler-generated code: dnSpy.Console.exe --no-tokens --no-color --show-all -t TypeName <dll> (or -l IL)
 
@@ -111,12 +114,13 @@ QUESTIONS
 | Game DLLs | `J:\SteamLibrary\steamapps\common\Nine Sols\NineSols_Data\Managed` |
 | Repo | `C:\c\dev\NineSols-ExampleMod` (folder name is still the template's) |
 | Project | `NineSolsQoL.sln`, `Source\NineSolsQoL.csproj` |
-| Research notes | `research\` in the repo, **gitignored** (they quote decompiled game code) |
+| Research notes | `C:\c\dev\modding\ninesols\research\`, outside the repo (they quote decompiled game code) |
+| Decompiled game | `C:\c\dev\modding\ninesols\decompiled\` (dnSpy) and `decompiled-ilspy\` (ILSpy, plus `libs\`) |
 | Mod manager | r2modman, profile **Default** |
 | Profile | `%AppData%\r2modmanPlus-local\NineSols\profiles\Default` |
 | BepInEx log | `<profile>\BepInEx\LogOutput.log` |
 | Our config | `<profile>\BepInEx\config\diegorv.NineSolsQoL.cfg` |
-| Tools | .NET SDK 10, Git, VS Code + C# Dev Kit, `C:\Users\diegorv\Downloads\dnSpy-net-win64\dnSpy.Console.exe` |
+| Tools | .NET SDK 10, Git, VS Code + C# Dev Kit, `C:\c\dev\modding\dnSpyEx\dnSpy.Console.exe` |
 | Build | `dotnet build Source/NineSolsQoL.csproj` (Ctrl+Shift+B in VS Code) |
 | CI | `.github/workflows/build.yml` builds against `nine-sols-modding/libs-stripped` (it has UniTask, Unity.TextMeshPro and UnityEngine.UI) |
 | Runtime | BepInEx 5.4.23.5, HarmonyX 2.9.0 in `<profile>\BepInEx\core` (we compile against HarmonyX 2.7 from NuGet), ConfigurationManager 18.3.1 |
@@ -146,15 +150,21 @@ left only an empty folder). The originals our features replace are no longer ins
 - The game spams `Adding null Transform to TransformAccessArray` (vanilla). The log uses my system's decimal
   comma (`200,0 ms`).
 
-### Decompiling the game (do this first, the output is per session)
+### Decompiling the game (already done, persistent)
+
+`C:\c\dev\modding\ninesols\decompiled\` holds the dnSpy output; its `BUILD.txt` names the Steam build. After a
+game update, regenerate it with `C:\c\dev\modding\ninesols\decompile.ps1` (`-Tool dnspy` for this folder only).
+The script runs:
 
 ```sh
-dnSpy.Console.exe --no-sln --no-resources --no-tokens --no-color --spaces 4 --asm-path "<Managed>" -o "<scratchpad>/decomp" "<Managed>/Assembly-CSharp.dll" "<Managed>/rcg.rcgmakercore.Runtime.dll" "<Managed>/RCG_General.dll"
+dnSpy.Console.exe --no-sln --no-resources --no-tokens --no-color --spaces 4 --asm-path "<Managed>" -o "<modding>/ninesols/decompiled" "<Managed>/Assembly-CSharp.dll" "<Managed>/Assembly-CSharp-firstpass.dll" "<Managed>/rcg.rcgmakercore.Runtime.dll" "<Managed>/RCG_General.dll"
 ```
 
 About 15 s. One file per type, flat folders (namespaced types in subfolders). Async methods and lambdas only
 show up with `--show-all` or `-l IL`; `-t TypeName` prints one type to stdout. Line numbers in `research/` and
-below come from this output.
+below come from this output. Older reports cite `scratchpad\decomp\<Assembly>\...`: that is now
+`C:\c\dev\modding\ninesols\decompiled\<Assembly>\...` (same build, same lines). Their `D/`, `agent-*` and `src-*`
+dumps lived in old session scratchpads and may be gone.
 
 ---
 
@@ -453,6 +463,6 @@ the discovery fan-out of "The process").
 
 1. Read this file, `README.md` and the code under `Source/` (the EarlyAirDash and FastHeal transpilers are the
    pattern to copy for "make one game check pass").
-2. Decompile the game into the session scratchpad (command above).
+2. Check that `C:\c\dev\modding\ninesols\decompiled\BUILD.txt` matches the game's Steam build (regenerate if not).
 3. Read the end of `LogOutput.log` to see where I left off, and `git log --oneline -10`.
 4. Ask me what comes next: release polish (see Open items) or a new feature.
