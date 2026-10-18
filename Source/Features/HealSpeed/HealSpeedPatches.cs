@@ -13,8 +13,8 @@ internal static class HealSpeedPatches {
     // which compiles to
     //     ldarg.0; call get_isSpeedUpHeal; brfalse ...
     // This turns that call into a call to HealSpeedFeature.SpeedUpHeal, which takes the same state. If
-    // the code is not exactly as expected (a game update), it is left as it is and the feature does
-    // nothing.
+    // OnStateEnter does not call the getter exactly once (a game update), it is left as it is and the
+    // feature does nothing.
     [HarmonyPatch(typeof(PlayerDrinkPotionState), nameof(PlayerDrinkPotionState.OnStateEnter))]
     [HarmonyTranspiler]
     private static IEnumerable<CodeInstruction> HealFaster(IEnumerable<CodeInstruction> instructions) {
