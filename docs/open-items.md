@@ -24,6 +24,22 @@ feature.
   decisions log a few `[teleport]`/`[early teleport]` Debug lines per menu opening (each tab change runs
   `PrepareValidTab` twice, and both button components `EnableCheck`).
 
+## Audit questions that need later bosses
+
+From the 2026-10-18 audit (`..\ninesols\research\audit\SUMMARY.md`), to check live with bepinex-mcp at each new boss
+(`search_gameobjects(component_name="PlayerWalkToTrigger" | "BossArea" | "PlayerTransformParentChangeTrigger")`):
+
+- respawn-1: ArenaTracker records any `PlayerWalkToTrigger`, cutscene ones included. Checked in `A2_S5_BossHorseman_Final`:
+  only the boss entrance is active (the Root Node horn and sleep pod cutscene triggers are inactive), and it fires
+  again on every attempt, so the Horseman is fine. Still to check: Jiequan (`A5_S1_JieChuanBattle` has a
+  `playerSensor`), Yi Gung, Jee, Goumang.
+- respawn-5: the game's scripted override respawn (`SaveManager.forceSaveFlag`) is not among the early-outs; matters
+  only if a story sequence uses it.
+- abilities-hud-3: with two boss bars, BossHPNumbers follows only the first (read `UIMonsterHPManager.bossHPList`
+  during a fight with two bosses).
+- respawn-2 (fixed in 1.1.0 with `ResetParent`): no `PlayerTransformParentChangeTrigger` in the Horseman scene; a
+  death on a lift elsewhere would confirm it.
+
 ## Possible improvements
 
 - LootMagnet: health, qi and ammo drops fly in even when full and the excess is wasted (like FarawayPickup;
