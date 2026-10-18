@@ -148,17 +148,20 @@ Paths to the game, the profile and the log are in `..\CLAUDE.md`; build and Scri
 
 ## MCP tools (from the 2026-10-18 audit, `..\ninesols\research\audit\mcps.md`)
 
-- **dnspy-mcp** (static): signatures, overloads (`search_members`), `inspect_method` (virtual/static) and `dump_il`
-  for transpiler anchors. Point it only at scratchpad copies of DLLs: it keeps every file it opens locked until the
-  session ends (a locked `NineSolsQoL.dll` breaks the build's copy). Use type names that are unique as substrings
-  ("Player" returns empty IL) and treat empty output as "not found". Caller lists stop at 10: grep `decompiled\`.
+Both servers carry our fixes on our own branches (`bepinex-mcp` `fix/mono-listener-reload`, `dnSpy-MCP` `fix/audit`).
+
+- **dnspy-mcp** (static): signatures, overloads (`search_members`, `inspect_method`'s `Overloads`), virtual/static,
+  and `dump_il` for transpiler anchors (exact type names: `Ns.Outer+Inner` or the bare name; every overload).
+  Assemblies are read into memory, so analysing a DLL no longer locks it. Caller lists are direct calls in one
+  assembly only (they say so): grep `decompiled\` for callers.
 - **bepinex-mcp** (the running game, dev profile only): read-only tools to answer scene/prefab questions live instead
-  of a one-off F9 diagnostic (`search_gameobjects`, `get_hierarchy_snapshot`, `get_component_member` by instance id;
-  ids change after a scene load). Never `watch_component_member`, selector profiles or `resolve_gameobject_selector`:
-  each poll freezes the game for about 240 ms. `list_mod_patches` lists only the bridge's patches (use the log), and
-  it cannot read static mod state (use F9). No writing tools (patch, inject, set, profiles, setup).
-- The bridge runs any C# sent to `localhost:8080` without authentication: keep `BepInExMCP.dll` out of the profile
-  when not using it, and never in a release.
+  of a one-off F9 diagnostic (`search_gameobjects`, `get_hierarchy_snapshot`, `get_component_member` by instance id,
+  static members included; ids change after a scene load). `list_harmony_patches(owner="diegorv")` lists every patch
+  the mod applied. Resolving a selector still scans every GameObject (~240 ms): resolve once, then use the id;
+  watchers now reuse their object. Writing tools ask first, setup/inject/auto-apply are denied (`~\.claude\settings.json`).
+- The bridge only answers requests with its token (`X-MCP-Token`, written to
+  `%LOCALAPPDATA%\unity-mcp-translator\bridge-token` at every game start), so a web page can no longer reach it. It
+  still runs C# for whoever has the token: dev profile only, never in a release.
 
 ## Code conventions (keep them)
 
