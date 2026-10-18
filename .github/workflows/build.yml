@@ -149,6 +149,5 @@ jobs:
         working-directory: thunderstore
         env:
           TCLI_AUTH_TOKEN: ${{ secrets.TCLI_AUTH_TOKEN }}
-        run: |
-          version="${{ needs.build.outputs.version }}"
-          tcli publish --package-version "$version" --file "../package/diegorv-NineSolsQoL-$version.zip"
+        # The version comes from the zip's manifest (tcli refuses --package-version with --file)
+        run: tcli publish --file "../package/diegorv-NineSolsQoL-${{ needs.build.outputs.version }}.zip"
