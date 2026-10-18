@@ -31,6 +31,13 @@ internal static class TeleportMenus {
         return node;
     }
 
+    // Whether Yi sits at a Root Node, which the Teleport tab and button need. Cheap, so the condition postfixes,
+    // which also run for conditions elsewhere in the game, test it before walking the hierarchy.
+    public static bool PlayerIsSitting() {
+        var player = Player.i;
+        return player != null && player.CurrentStateType == PlayerStateType.EnterSavePoint;
+    }
+
     // Whether the condition is one of the Root Node menu's Teleport button's (on the button or a direct child, the
     // ones UIControlButton checks)
     public static bool IsOnTeleportButton(AbstractConditionComp condition, GameCore core) {

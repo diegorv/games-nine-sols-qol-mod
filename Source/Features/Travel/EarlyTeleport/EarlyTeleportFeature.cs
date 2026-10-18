@@ -37,7 +37,10 @@ internal static class EarlyTeleportFeature {
             // Making an inverted one pass would hide what it guards
             if (!Enabled.Value || condition.FinalResultInverted) return false;
             var ability = condition.ability.AbilityData;
-            if (ability == null || ability.IsAcquired || !TeleportMenus.IsOnTeleportTab(condition)) return false;
+            if (ability == null || ability.IsAcquired || !TeleportMenus.PlayerIsSitting() ||
+                !TeleportMenus.IsOnTeleportTab(condition)) {
+                return false;
+            }
 
             Log.Debug($"[early teleport] the Teleport tab may show: '{ability.name}' is not acquired yet");
             return true;

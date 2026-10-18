@@ -45,11 +45,13 @@ internal static class TeleportFromAnyNodeFeature {
                 return false;
             }
 
+            // The cheap check first: the tab check walks the hierarchy
+            var node = TeleportMenus.SittingNode(core);
+            if (node == null || node == points.AGSavePoint) return false;
+
             var onButton = TeleportMenus.IsOnTeleportButton(condition, core);
             if (onButton ? !TeleportMenus.TabMenuAvailable() : !TeleportMenus.IsOnTeleportTab(condition)) return false;
-
-            var node = TeleportMenus.SittingNode(core);
-            if (node == null || node == points.AGSavePoint || !TeleportMenus.PavilionButtonValid(core)) return false;
+            if (!TeleportMenus.PavilionButtonValid(core)) return false;
 
             Log.Debug($"[teleport] the {(onButton ? "Teleport button" : "Teleport tab")} may show at '{node.name}' " +
                       "(its Pavilion button is shown)");
