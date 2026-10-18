@@ -10,7 +10,7 @@ namespace NineSolsQoL.Core;
 //  - DumpKey (F9) writes the player state, the death bag, what each feature registered with
 //    AddDumpSection and every collider around the player to the log, to find out which objects a
 //    spot belongs to (triggers, sensors, arena areas).
-//  - Watch logs the player state twice a second for a while, to see where a respawn gets stuck
+//  - With DebugLogging on, Watch logs the player state twice a second for a while, to see where a respawn gets stuck
 //    (input state, frozen, hidden...) and what happens to the death bag.
 //  - With DebugLogging on, every frame slower than HitchSeconds during gameplay is logged, to tell
 //    whether stutters line up with something the mod does.
@@ -57,6 +57,7 @@ internal static class DebugTools {
     }
 
     private static void TickWatch() {
+        if (!Log.DebugEnabled) return;
         var now = Time.realtimeSinceStartup;
         if (now >= watchUntil || now < nextWatchLog) return;
         nextWatchLog = now + WatchInterval;

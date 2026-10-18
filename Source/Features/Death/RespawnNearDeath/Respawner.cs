@@ -59,7 +59,7 @@ internal static class Respawner {
         }
 
         core.FadeOutBlack(FadeTime, 1f, null);
-        Log.Info($"Respawned at {position}");
+        Log.Debug($"Respawned at {position}");
         DebugTools.Watch("quick revive", 5f);
     }
 

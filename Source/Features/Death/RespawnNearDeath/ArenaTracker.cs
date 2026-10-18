@@ -45,9 +45,10 @@ internal static class ArenaTracker {
             entranceName = trigger.transform.HierarchyPath();
             entranceRespawn = NewestTrailPointOutside(core, areas);
 
+            if (!Log.DebugEnabled) return;
             var playerPos = core.player.transform.position;
-            Log.Info($"Fight entrance '{entranceName}' fired with the player at {playerPos}: respawn point " +
-                     (entranceRespawn.HasValue ? $"{entranceRespawn.Value + origin}" : "none found"));
+            Log.Debug($"Fight entrance '{entranceName}' fired with the player at {playerPos}: respawn point " +
+                      (entranceRespawn.HasValue ? $"{entranceRespawn.Value + origin}" : "none found"));
             foreach (var c in colliders) Log.Debug($"  entrance area '{c.transform.HierarchyPath()}' {c.bounds.Describe()}");
             if (trigger.walkTo != null) Log.Debug($"  walks the player to {trigger.walkTo.position}");
 

@@ -45,7 +45,7 @@ internal static class GamePrivates {
         if (LastTeleportPoint.Value is not { } field) return;
         ref var point = ref field(core);
         if (point == null) return;
-        Log.Info($"Cleared GameCore._lastTeleportPoint ({point.name}) so its revive animation does not play");
+        Log.Debug($"Cleared GameCore._lastTeleportPoint ({point.name}) so its revive animation does not play");
         point = null!;
     }
 
@@ -53,7 +53,7 @@ internal static class GamePrivates {
         try {
             return AccessTools.FieldRefAccess<T, TField>(name);
         } catch (Exception e) {
-            Log.Error($"Game field {typeof(T).Name}.{name} not found, a game update probably changed it: {e.Message}");
+            Log.Error($"Game field {typeof(T).Name}.{name} not found, a game update probably changed it: {(e.InnerException ?? e).Message}");
             return null;
         }
     }
@@ -64,7 +64,7 @@ internal static class GamePrivates {
             var method = AccessTools.Method(type, name) ?? throw new MissingMethodException(type.Name, name);
             return AccessTools.MethodDelegate<TDelegate>(method);
         } catch (Exception e) {
-            Log.Error($"Game method {type.Name}.{name} not found, a game update probably changed it: {e.Message}");
+            Log.Error($"Game method {type.Name}.{name} not found, a game update probably changed it: {(e.InnerException ?? e).Message}");
             return null;
         }
     }

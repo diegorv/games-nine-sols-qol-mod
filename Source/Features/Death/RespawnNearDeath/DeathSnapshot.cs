@@ -31,9 +31,11 @@ internal sealed class DeathSnapshot {
                 InBossFight = GameAccess.IsBossFightActive(core),
             };
             // The death bag gets carried Jin/XP times DeathPenaltyRate (PlayerDeadRecord.StorePlayerDataBeforeDead)
-            Log.Debug($"Died in {core.CurrentSceneName} at {pending.Position}: last safe ground {pending.SafeGround}, " +
-                      $"boss fight {pending.InBossFight}, carrying Jin {core.playerGameData.CurrentGold} " +
-                      $"XP {core.playerGameData.CurrentExp}, death bag rate {player.statData.DeathPenaltyRate.Value}");
+            if (Log.DebugEnabled) {
+                Log.Debug($"Died in {core.CurrentSceneName} at {pending.Position}: last safe ground {pending.SafeGround}, " +
+                          $"boss fight {pending.InBossFight}, carrying Jin {core.playerGameData.CurrentGold} " +
+                          $"XP {core.playerGameData.CurrentExp}, death bag rate {player.statData.DeathPenaltyRate.Value}");
+            }
         } catch (Exception e) {
             pending = null;
             Log.Error($"DeathSnapshot.Record failed: {e}");

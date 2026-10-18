@@ -55,7 +55,7 @@ internal static class RespawnController {
             return false;
         }
 
-        Log.Info($"Respawning on the last safe ground {death.SafeGround} (died at {death.Position})");
+        Log.Debug($"Respawning on the last safe ground {death.SafeGround} (died at {death.Position})");
         Respawner.QuickReviveAt(core, death.SafeGround);
         return true;
     }
@@ -74,8 +74,8 @@ internal static class RespawnController {
             return false;
         }
 
-        Log.Info($"Died in a boss fight: reloading {core.CurrentSceneName} with the player at " +
-                 $"{point.Value + core.gameLevel.transform.position} ({how})");
+        Log.Debug($"Died in a boss fight: reloading {core.CurrentSceneName} with the player at " +
+                  $"{point.Value + core.gameLevel.transform.position} ({how})");
         Respawner.ReloadSceneAt(core, point.Value);
         return true;
     }
