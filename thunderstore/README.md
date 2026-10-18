@@ -105,6 +105,8 @@ activated. Nothing is unlocked in your save, and once the game gives you the tel
 
 ## Compatibility
 
+Made for the current Steam version of the game. The 2024 speedrun patch is not supported.
+
 Each feature turns itself off, with a warning in the log, when the mod it replaces is installed, so the two never
 patch the game twice:
 

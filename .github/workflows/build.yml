@@ -1,6 +1,6 @@
 name: build
 
-# Every push and pull request builds the mod against every game version in libs-stripped.
+# Every push and pull request builds the mod against the newest game version in libs-stripped.
 # A tag vMAJOR.MINOR.PATCH also releases that version: the GitHub release (package zip, DLL,
 # checksums, notes from the commits) and, once approved in the thunderstore environment, the
 # Thunderstore upload.
@@ -38,12 +38,6 @@ jobs:
         run: dotnet restore
       - name: Install tcli
         run: dotnet tool install -g tcli --version "$TCLI_VERSION"
-      - name: Check against all game versions
-        run: |
-          cut -f1 -d' ' libs-stripped/versions.txt | while IFS= read -r version; do
-            echo "Checking $version"
-            dotnet build --no-restore -p:DllPath="$PWD/libs-stripped/$version"
-          done
       - name: Version
         id: version
         run: |
@@ -64,6 +58,8 @@ jobs:
           scripts/changelog.sh full "$GITHUB_REF_NAME" > thunderstore/build/files/CHANGELOG.md
           scripts/changelog.sh notes "$GITHUB_REF_NAME" > thunderstore/build/notes.md
           cat thunderstore/build/notes.md
+      # Only the newest game version: the mod uses APIs that older builds (the 2024 speedrun patch)
+      # do not have
       - name: Package
         run: |
           publish_version=$(cut -f1 -d' ' libs-stripped/versions.txt | tail -n1)
