@@ -135,6 +135,13 @@ TeleportFromAnywhere, HPNumbers, YiXPNumber, FarawayPickup, NoDeathPenalty. I pl
 - A hot reload resets every static of the mod: e.g. reloading in the middle of a boss fight loses the fight
   entrance, and the next death uses the game's respawn. Dev-only.
 - Never have the DLL in both `scripts` and `plugins`.
+- **Keep NineSolsAPI installed** in the profile, even though our mod does not reference it: its Awake hides the
+  BepInEx manager GameObject (`hideFlags = 61`) and registers it with `RCGLifeCycle.DontDestroyForever`
+  (`NineSolsAPICore.cs:64, 85` in 1.3.1). That object hosts ConfigurationManager and ScriptEngine, and the game's
+  `DestroyAllGameObjects` (title screen) destroys every unregistered GameObject: without NineSolsAPI, F1 and F6
+  stop working (it happened on 2026-10-17). In a release install our own `Plugin.RegisterLifeCycle` registers
+  that object, since the mod then lives on it too. A reinstall of BepInEx also resets ScriptEngine's
+  `EnableFileSystemWatcher`/`AutoReloadDelay` and deletes our `.cfg`.
 - If you rename or delete files that may be open in VS Code, tell me to close those tabs without saving.
 - **F8 opens one of the game's own debug screens.** Our dump key is F9. F1 is the config menu.
 - The game spams `Adding null Transform to TransformAccessArray` (vanilla). The log uses my system's decimal

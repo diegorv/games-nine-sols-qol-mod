@@ -3,6 +3,10 @@
 Quality of life tweaks for Nine Sols. Each one can be turned off in the config menu (F1), where they are
 grouped as below. Work in progress.
 
+Installing it also installs NineSolsAPI (which keeps the game from unloading the mods when it returns to the
+title screen; note that it turns achievements off by default, in its own config) and the BepInEx
+ConfigurationManager (the F1 menu).
+
 ## Abilities
 
 ### Early air dash

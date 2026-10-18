@@ -107,7 +107,9 @@ r2modman profile's `BepInEx/scripts` folder. Adjust `<NineSolsPath>` and `<Profi
 your game or profile live elsewhere.
 
 `dotnet publish` builds a release DLL and packages it with `tcli` (`dotnet tool install -g tcli`) into
-`thunderstore/build/`. The release goes to `BepInEx/plugins` like any other mod.
+`thunderstore/build/`. The release goes to `BepInEx/plugins` like any other mod. The package declares
+BepInExPack, NineSolsAPI and ConfigurationManager as dependencies (`thunderstore/thunderstore.toml`), so
+r2modman installs them with it.
 
 ## Development loop (ScriptEngine)
 
@@ -120,6 +122,11 @@ in `BepInEx/config/com.bepis.bepinex.scriptengine.cfg`:
 Start the game and press `F6` once. The log is in `<profile>/BepInEx/LogOutput.log`.
 
 Do not keep the mod enabled in `BepInEx/plugins` at the same time, or it loads twice.
+
+Keep [NineSolsAPI](https://thunderstore.io/c/nine-sols/p/ninesolsmodding/NineSolsAPI/) installed in the profile.
+The game destroys every unregistered GameObject when it shows the title screen, including the BepInEx object
+that holds ConfigurationManager and ScriptEngine; NineSolsAPI registers that object, and without it `F1` and
+`F6` stop working. (A release install of this mod registers it too, from `Plugin.Awake`.)
 
 ## Debugging
 
