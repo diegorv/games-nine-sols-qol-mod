@@ -37,6 +37,8 @@ From the 2026-10-18 audit (`..\ninesols\research\audit\SUMMARY.md`), to check li
   only if a story sequence uses it.
 - abilities-hud-3: with two boss bars, BossHPNumbers follows only the first (read `UIMonsterHPManager.bossHPList`
   during a fight with two bosses).
+- Faster alternative for all bosses at once, no game or save involved: read the scenes offline (UnityPy on
+  `NineSols_Data\level*`) and list each arena's PlayerWalkToTrigger (active or not), BossArea and parent triggers.
 - respawn-2 (fixed in 1.1.0 with `ResetParent`): no `PlayerTransformParentChangeTrigger` in the Horseman scene; a
   death on a lift elsewhere would confirm it.
 
