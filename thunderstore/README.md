@@ -83,7 +83,7 @@ Multipliers for the Jin you earn, all 1 (unchanged) by default:
 
 - `Monster drops`: coins dropped by enemies, chests and breakable objects.
 - `Transmute Unto Wealth`: the 10 Jin from each enemy killed by a talisman explosion.
-- `Selling`: the Jin you receive when you sell an item, such as recycling at the 3D printer. The shop shows
+- `Selling`: the Jin you receive when you sell an item, such as the money bags at the Pavilion. The shop shows
   the multiplied amount. Prices you pay are unchanged.
 
 The death bag is never multiplied.

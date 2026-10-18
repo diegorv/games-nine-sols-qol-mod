@@ -15,8 +15,8 @@ feature.
   F9's `gold=` before and after the revive.
 - DashInvulnerability: the 2026-10-18 fix of the DodgeEnd tolerance (audit combat-1) was tested with single dashes
   only; chained dashes (`keptDashes` rising in F9) not yet.
-- JinMultipliers: Transmute Unto Wealth and selling not yet seen in the log (`[jin] Transmute Unto Wealth`,
-  `[jin] sold`; `is not a sale` would mean the 3D printer uses another trade type).
+- JinMultipliers: Transmute Unto Wealth not yet seen in the log (`[jin] Transmute Unto Wealth`). Selling was seen
+  on 2026-10-18 (money bags in the Pavilion).
 - NoDeathPenalty: picking up an empty bag with the Life Recovery or Azure Recovery skill (I don't have them yet).
   Their effects live in prefab FSMs; nothing in code reads the bag's contents, so they should still trigger.
 - TeleportFromAnyNode/EarlyTeleport: the story locks (Prison, after Lady Ethereal, final stage), and

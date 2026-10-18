@@ -13,7 +13,7 @@ namespace NineSolsQoL.Features.Loot.JinMultipliers;
 //   coin prefabs, which pooled copies do not inherit.
 // - Transmute Unto Wealth (a skill): AddGold(10, GoldSourceTag.FooExplode) for each enemy killed by
 //   a talisman explosion (Player.FooExplodeKillMonster).
-// - Selling, e.g. recycling at the 3D printer: a shop trade of type 販賣 ("sell") takes the item
+// - Selling, e.g. the money bags at the Pavilion: a shop trade of type 販賣 ("sell") takes the item
 //   (mainMaterial) and adds OutcomeResult.ModifyAmount to the gold field (MerchandiseData.Trade ->
 //   Receive), without AddGold. Spending never goes through Receive.
 // The Jin of the death bag (GoldSourceTag.DeathPenalty) is never multiplied.
@@ -48,7 +48,7 @@ internal static class JinMultipliersFeature {
             "Multiplies the 10 Jin that the Transmute Unto Wealth skill gives for each enemy killed by a " +
             "talisman explosion. Vanilla: 1", range, name: "Transmute Unto Wealth");
         Selling = section.Bind("Selling", 1,
-            "Multiplies the Jin you receive when you sell an item, such as recycling at the 3D printer. The " +
+            "Multiplies the Jin you receive when you sell an item, such as the money bags at the Pavilion. The " +
             "shop shows the multiplied amount. Prices you pay are unchanged. At 99,999 Jin a sale still takes " +
             "the item but the Jin is lost, as in the game. Vanilla: 1", range);
 

@@ -61,8 +61,9 @@ citations.
 - Gold is a `ScriptableDataFloat`. `AddGold` writes past its cap; every shop write (`ConsumeCheck`, `Receive`)
   goes through the clamped setter. The cap is **99,999 with no ExternalRepository** (seen in game): the excess is
   lost at the next purchase or sale.
-- Selling = `MerchandiseData.Trade` → `OutcomeResult.Receive()` on a 販賣 trade. Recycling at the 3D printer is
-  assumed to be one (not yet seen in the log: look for `[jin] sold` or `is not a sale`).
+- Selling = `MerchandiseData.Trade` → `OutcomeResult.Receive()` on a 販賣 trade. Seen in game on 2026-10-18: selling
+  the money bag `(販賣)0_小錢袋` (100 Jin) in the Pavilion (`AG_S2_YiBase`) logged `[jin] sold ... 100 x 100`. The 3D
+  printer was never seen (the research's guess).
 
 ## Drops
 
