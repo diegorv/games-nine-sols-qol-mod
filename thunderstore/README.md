@@ -35,7 +35,7 @@ times faster, so a heal takes 60% of the time. With the jade equipped nothing ch
 A dash already makes Yi invulnerable, but the game ends it 0.05 s after the dash, so an attack that is still
 active when the dash ends can hit right away. Yi now stays invulnerable for `InvulnerabilityAfterDash`
 seconds after a dash (0.1 by default), and a dash that starts during that time keeps its own invulnerability.
-Traps still hurt, as in the game.
+Attacks can't be parried during that time either, and solid traps still hurt, as in the game.
 
 ## Air dash
 
