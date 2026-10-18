@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using HarmonyLib;
+using NineSolsQoL.Core;
 
 namespace NineSolsQoL.Features.Abilities.FastHeal;
 
@@ -12,7 +13,8 @@ internal static class FastHealPatches {
     //     if (this.isSpeedUpHeal) this.player.animator.speed = 1.66666f;
     // which compiles to
     //     ldarg.0; call get_isSpeedUpHeal; brfalse ...
-    // This turns that call into a call to FastHealFeature.SpeedUpHeal, which takes the same state. If
+    // This adds a call to FastHealFeature.SpeedUpHeal right after the getter: it takes the getter's
+    // result and passes it on, or true while the feature is on. The game's getter runs as it is. If
     // OnStateEnter does not call the getter exactly once (a game update), it is left as it is and the
     // feature does nothing.
     [HarmonyPatch(typeof(PlayerDrinkPotionState), nameof(PlayerDrinkPotionState.OnStateEnter))]
@@ -21,26 +23,17 @@ internal static class FastHealPatches {
         // Harmony runs the transpiler again whenever OnStateEnter is patched again (e.g. by another mod)
         FastHealFeature.Patched = false;
         var code = instructions.ToList();
+        const string off = "FastHeal is off";
         var isSpeedUpHeal = AccessTools.PropertyGetter(typeof(PlayerDrinkPotionState), "isSpeedUpHeal");
-        if (isSpeedUpHeal == null) {
-            Log.Error("FastHeal is off: PlayerDrinkPotionState.isSpeedUpHeal not found, a game update probably " +
-                      "changed it");
-            return code;
-        }
+        var helper = AccessTools.Method(typeof(FastHealFeature), nameof(FastHealFeature.SpeedUpHeal));
+        if (!Transpile.Has(off, "PlayerDrinkPotionState.isSpeedUpHeal", isSpeedUpHeal, helper)) return code;
 
-        var matches = new List<int>();
-        for (var i = 0; i < code.Count; i++) {
-            if (code[i].Calls(isSpeedUpHeal)) matches.Add(i);
-        }
-        if (matches.Count != 1) {
-            Log.Error($"FastHeal is off: found {matches.Count} checks of the heal jade in " +
-                      "PlayerDrinkPotionState.OnStateEnter instead of 1, a game update probably changed it");
-            return code;
-        }
+        var check = Transpile.FindOne(code, (c, i) => c[i].Calls(isSpeedUpHeal),
+            off, "checks of the heal jade", "PlayerDrinkPotionState.OnStateEnter");
+        if (check < 0) return code;
 
-        // A plain call: the helper is static and takes the state the getter was called on
-        code[matches[0]].opcode = OpCodes.Call;
-        code[matches[0]].operand = AccessTools.Method(typeof(FastHealFeature), nameof(FastHealFeature.SpeedUpHeal));
+        // Takes the bool the getter left on the stack and leaves one
+        code.Insert(check + 1, new CodeInstruction(OpCodes.Call, helper));
         FastHealFeature.Patched = true;
         return code;
     }

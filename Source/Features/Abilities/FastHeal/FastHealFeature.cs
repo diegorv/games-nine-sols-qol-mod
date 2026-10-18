@@ -27,12 +27,10 @@ internal static class FastHealFeature {
         DebugTools.AddDumpSection(Describe);
     }
 
-    // Called by PlayerDrinkPotionState.OnStateEnter in place of its private isSpeedUpHeal, which reads
-    // the jade's IsActivated. Only the game's own getter can throw, as it would without the mod.
-    public static bool SpeedUpHeal(PlayerDrinkPotionState state) {
-        // The jade's getter still runs: it applies or removes the jade's effects when its state changes
-        if (state.SpeedUpHealJade.IsActivated) return true;
-        if (!Enabled.Value) return false;
+    // Called by PlayerDrinkPotionState.OnStateEnter right after its private isSpeedUpHeal (the jade's
+    // IsActivated), with what it returned
+    public static bool SpeedUpHeal(bool jade) {
+        if (jade || !Enabled.Value) return jade;
 
         Log.Debug("[heal] at the Quick Dose jade's speed, without the jade");
         return true;
