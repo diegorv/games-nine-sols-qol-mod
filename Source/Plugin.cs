@@ -77,10 +77,10 @@ public class Plugin : BaseUnityPlugin {
     }
 
     private void OnDestroy() {
-        // A ScriptEngine reload creates a new instance: undo the patches so they are not applied twice,
-        // and remove what the mod draws
-        foreach (var harmony in harmonies) harmony.UnpatchSelf();
+        // A ScriptEngine reload creates a new instance: remove what the mod draws (first: it cannot throw)
+        // and undo the patches so they are not applied twice
         HPNumbersFeature.Destroy();
+        foreach (var harmony in harmonies) harmony.UnpatchSelf();
         Log.Info($"{MyPluginInfo.PLUGIN_NAME} unloaded");
     }
 

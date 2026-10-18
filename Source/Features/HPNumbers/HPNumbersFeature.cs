@@ -14,9 +14,10 @@ namespace NineSolsQoL.Features.HPNumbers;
 // Like MicheliniDev's HPNumbers: texts on a canvas of the mod's own, drawn over the game, placed and
 // coloured from the config, read every frame. The values are the ones the game's boss bar draws: the
 // PostureSystem the bar is bound to (GameCore.monsterHpUI.CurrentBossHP), GetPostureValue() and
-// InternalInjury, so the numbers show exactly while the game shows its boss bar, and only while it
-// shows its HUD (UIManager.playerInGameUIDisplayVote): not in menus, the map, dialogues, cutscenes,
-// after a death or while loading. No game method is patched.
+// InternalInjury. The numbers show while the game shows that bar (not while a phase change hides it)
+// and its HUD (UIManager.playerInGameUIDisplayVote): not in menus, the map, dialogues, cutscenes, after
+// a death, while loading or under the black cover. A bar a BossArea keeps for itself (localBossHP) is
+// not in the game's list, so it gets no number. No game method is patched.
 internal static class HPNumbersFeature {
     // The internal injury colour of the original mod's defaults
     private static readonly Color InternalInjuryColor = new(0.5f, 1f, 1f, 1f);
@@ -54,8 +55,8 @@ internal static class HPNumbersFeature {
         if (!Active || failed) return;
         try {
             var core = Enabled.Value ? GameAccess.CoreInLevel() : null;
-            if (core == null || !HudShown()) {
-                if (root != null && root.activeSelf) root.SetActive(false);
+            if (core == null || !HudShown() || CoverShown()) {
+                Hide();
                 return;
             }
 
@@ -68,7 +69,16 @@ internal static class HPNumbersFeature {
         } catch (Exception e) {
             failed = true;
             Log.Error($"HPNumbers is off until the game restarts, after an error: {e}");
+            try {
+                Hide();
+            } catch (Exception) {
+                // Nothing more to do: the error above is already logged
+            }
         }
+    }
+
+    private static void Hide() {
+        if (root != null && root.activeSelf) root.SetActive(false);
     }
 
     // When the mod unloads (hot reload): the canvas is not part of any patch, so it must go explicitly
@@ -85,10 +95,23 @@ internal static class HPNumbersFeature {
         return vote != null && vote.Result;
     }
 
-    // The boss whose bar the game shows (the first one, like GameCore.monsterHpUI.CurrentBossHP)
+    // The game's black cover (trap respawns, falls, scene changes) draws under the overlay canvas
+    private static bool CoverShown() {
+        if (!ApplicationUIGroupManager.IsAvailable()) return false;
+        var cover = ApplicationUIGroupManager.Instance.blackCover;
+        return cover != null && cover.gameObject.activeInHierarchy && cover.color.a > 0.01f;
+    }
+
+    // The boss whose bar the game shows (the first one, like GameCore.monsterHpUI.CurrentBossHP), unless
+    // the game hides that bar for a phase change: BossPhaseChangeState hides it on enter and shows it on
+    // exit when UseLoopAngry is off (the same test as UIBossHP.DecreaseFeedback)
     private static PostureSystem? BossPosture(GameCore core) {
         var bar = core.monsterHpUI != null ? core.monsterHpUI.CurrentBossHP : null;
-        return bar != null ? bar.bindingPosture : null;
+        var posture = bar != null ? bar.bindingPosture : null;
+        if (posture == null) return null;
+        var monster = posture.BindMonster;
+        if (monster != null && monster.currentMonsterState is BossPhaseChangeState { UseLoopAngry: false }) return null;
+        return posture;
     }
 
     // An overlay canvas scaled like a 1920x1080 screen, so the configured positions and sizes keep
@@ -122,6 +145,11 @@ internal static class HPNumbersFeature {
 
 // One number on screen and its config entries
 internal sealed class HPNumber {
+    private static readonly Vector2 BottomCentre = new(0.5f, 0f);
+
+    // The bottom centre of the 1920x1080 reference screen the positions are given in
+    private static readonly Vector2 ReferenceCentre = new(960f, 0f);
+
     private readonly string key;
     private readonly ConfigEntry<bool> show;
     private readonly ConfigEntry<Vector2> position;
@@ -150,9 +178,11 @@ internal sealed class HPNumber {
         text.raycastTarget = false;
         text.enableWordWrapping = false;
         text.alignment = TextAlignmentOptions.MidlineLeft;
+        // Anchored at the bottom centre, like the game's boss bar, so on screens wider or narrower than 16:9
+        // the numbers stay next to it; Show converts the configured position
         var rect = text.rectTransform;
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.zero;
+        rect.anchorMin = BottomCentre;
+        rect.anchorMax = BottomCentre;
         rect.pivot = new Vector2(0f, 0.5f);
         rect.sizeDelta = new Vector2(300f, 100f);
         shown = int.MinValue;
@@ -168,10 +198,13 @@ internal sealed class HPNumber {
 
         if (value!.Value != shown) {
             shown = value.Value;
-            text.text = shown.ToString();
+            // Writes the digits without building a string (the value changes almost every frame while
+            // internal injury flows back)
+            text.SetText("{0}", shown);
         }
         var rect = text.rectTransform;
-        if (rect.anchoredPosition != position.Value) rect.anchoredPosition = position.Value;
+        var anchored = position.Value - ReferenceCentre;
+        if (rect.anchoredPosition != anchored) rect.anchoredPosition = anchored;
         text.fontSize = fontSize.Value;
         text.color = color.Value;
     }
