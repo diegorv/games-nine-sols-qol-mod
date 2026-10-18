@@ -15,8 +15,8 @@ with it), unless No death penalty is on.
 
 ## No death penalty
 
-You keep your Jin and XP when you die. The death bag still appears where you died, but empty: you can still
-pick it up, for the skills that react to that.
+You keep your Jin and XP when you die. The death bag still appears as usual (or is carried by the enemy that
+killed you), but empty: you can still pick it up, for the skills that react to that.
 
 ## Parry window
 

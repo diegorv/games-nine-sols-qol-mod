@@ -398,10 +398,12 @@ What the research found:
   have them). Their effects live in prefab FSMs; nothing in code reads the bag's contents, so they should still
   trigger.
 - NoDeathPenalty, accepted limits: a hot reload between a death and its penalty (2 s, or until the next door on maps
-  with the game's own quick revive) loses that death's Jin (dev only). On such a map, a death with the feature off,
-  then a second death with it on where the game stores no bag (`CanStoreDeadRecord` fails) leaves the old full bag
-  and the kept Jin (duplication). An unretrieved bag from a vanilla death is overwritten by the next death, as in
-  vanilla.
+  with the game's own quick revive) loses that death's Jin (dev only). On such a map two deaths share one pending
+  penalty: if the setting is toggled between them and the second death stores no bag (`CanStoreDeadRecord` fails),
+  the second death's decision wins, giving the old full bag plus the kept Jin (off, then on) or an empty bag and
+  zeroed Jin (on, then off). Fixing it needs one more patch (the pending flag before `NeedDeathPenaltyCheck`);
+  whether `CanStoreDeadRecord` can flip between two deaths without a scene load is UNCONFIRMED. An unretrieved bag
+  from a vanilla death is overwritten by the next death, as in vanilla.
 - Respawn for other bosses: BossArea bosses, FSM bosses (Yi Gung, Jee, Jiequan), A4_S5 (fight starts on load),
   Goumang (locked doors). They fall back to the scene entrance today; start with an F9 dump at the arena.
 - Lag: with only our mod there were no frames over 100 ms. With chatty mods the BepInEx console is the prime

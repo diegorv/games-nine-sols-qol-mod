@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 
@@ -50,9 +51,12 @@ internal static class NoDeathPenaltyTranspiler {
             return code;
         }
 
-        // The opcode stays call: the helpers are static, with the instance as their first parameter
+        // A plain call (Calls also matches callvirt): the helpers are static, with the instance as their
+        // first parameter
+        code[golds[0]].opcode = OpCodes.Call;
         code[golds[0]].operand =
             AccessTools.Method(typeof(NoDeathPenaltyFeature), nameof(NoDeathPenaltyFeature.SetGoldAtPenalty));
+        code[exps[0]].opcode = OpCodes.Call;
         code[exps[0]].operand =
             AccessTools.Method(typeof(NoDeathPenaltyFeature), nameof(NoDeathPenaltyFeature.SetExpAtPenalty));
         NoDeathPenaltyFeature.Patched = true;

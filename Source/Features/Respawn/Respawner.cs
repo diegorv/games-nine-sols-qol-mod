@@ -15,9 +15,9 @@ internal static class Respawner {
     // GameCore._lastTeleportPoint set, and the next door into the Root Node's scene would then
     // play the Root Node's revive animation and leave the player hidden and without control.
     public static void QuickReviveAt(GameCore core, Vector3 position) {
-        // What the next scene load would do otherwise: the carried Jin and XP go away (they are in
-        // the death bag now). Calling the game's own method keeps no-penalty mods, which patch it,
-        // working.
+        // What the next scene load would do otherwise: the game's death penalty, which zeroes the
+        // carried Jin and XP (the death bag holds them now) unless NoDeathPenalty keeps them. Calling
+        // the game's own method keeps NoDeathPenalty and other no-penalty mods, which patch it, working.
         var penalty = core.player.IsNeedDeathPenalty;
         if (penalty) core.playerGameData.PlayerDeathPenalty();
         Log.Debug($"Death penalty {(penalty ? "applied with the game's PlayerDeathPenalty" : "not needed")}");

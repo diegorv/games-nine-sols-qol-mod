@@ -8,10 +8,10 @@ namespace NineSolsQoL.Features.NoDeathPenalty;
 // Keep Jin and experience when Yi dies.
 //
 // Vanilla, a death that has a penalty (not in memory mode, VR challenges or with the DeathPanaltyImmune
-// ability) first fills the death bag with the Jin and experience Yi carries
-// (PlayerDeadRecord.StorePlayerDataBeforeDead). Then, when Yi is revived or the next scene loads,
-// PlayerGamePlayData.PlayerDeathPenalty sets both to 0, counts the death, saves and clears the pending
-// penalty. NoDeathPenaltyTranspiler makes the penalty skip only the two lines that set Jin and experience
+// ability) first fills the death bag with the Jin and experience Yi carries, times DeathPenaltyRate (1 in
+// game) (PlayerDeadRecord.StorePlayerDataBeforeDead). Then the next scene load, or the Respawn feature's
+// quick revive, runs PlayerGamePlayData.PlayerDeathPenalty, which sets both to 0, counts the death, saves
+// and clears the pending penalty. NoDeathPenaltyTranspiler makes the penalty skip only the two lines that set Jin and experience
 // to 0, and NoDeathPenaltyPatches empties the bag the game just filled: it still appears where it would
 // (picking it up still triggers whatever reacts to it) but gives nothing.
 //
@@ -32,9 +32,10 @@ internal static class NoDeathPenaltyFeature {
     public static void Init(ConfigFile config) {
         var section = new ConfigSection(config, "NoDeathPenalty");
         Enabled = section.Bind("Enabled", true,
-            "Keep your Jin and experience when you die. The death bag still appears where you died, but empty: " +
-            "you can still pick it up, for the skills that react to that. Off: the game's penalty, where the Jin " +
-            "and experience you carry go into the death bag, and dying again before you pick it up loses them");
+            "Keep your Jin and experience when you die. The death bag still appears as usual (or is carried by the " +
+            "enemy that killed you), but empty: you can still pick it up, for the skills that react to that. Off: " +
+            "the game's penalty, where the Jin and experience you carry go into the death bag, and dying again " +
+            "before you pick it up loses them");
 
         DebugTools.AddDumpSection(Describe);
     }
