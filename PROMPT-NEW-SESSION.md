@@ -76,7 +76,7 @@ Sub-agent prompt template (this structure produced reports precise enough to des
 
 ```
 You are investigating the decompiled C# source of the Unity game Nine Sols (Mono) to support a BepInEx 5 +
-Harmony mod (NineSolsQoL, repo C:\c\dev\NineSols-ExampleMod). Thoroughness: very thorough.
+Harmony mod (NineSolsQoL, repo C:\c\dev\modding\NineSolsQoL). Thoroughness: very thorough.
 
 RULES
 - Do not guess. Every claim must cite file path + line numbers and quote the relevant lines.
@@ -112,7 +112,7 @@ QUESTIONS
 |---|---|
 | Game | `J:\SteamLibrary\steamapps\common\Nine Sols` |
 | Game DLLs | `J:\SteamLibrary\steamapps\common\Nine Sols\NineSols_Data\Managed` |
-| Repo | `C:\c\dev\NineSols-ExampleMod` (folder name is still the template's) |
+| Repo | `C:\c\dev\modding\NineSolsQoL` |
 | Project | `NineSolsQoL.sln`, `Source\NineSolsQoL.csproj` |
 | Research notes | `C:\c\dev\modding\ninesols\research\`, outside the repo (they quote decompiled game code) |
 | Decompiled game | `C:\c\dev\modding\ninesols\decompiled\` (dnSpy) and `decompiled-ilspy\` (ILSpy, plus `libs\`) |
