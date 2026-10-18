@@ -1,14 +1,20 @@
 # Open items
 
-Every planned feature is done. Next: the first release, unless I ask for a new feature.
+Every planned feature is done and 1.0.0 is on Thunderstore. Next: release the audit fixes, unless I ask for a new
+feature.
 
 ## Release
 
-- The rest of the first release: `docs/thunderstore-upload.md`.
+- 1.1.0 (minor: the NineSolsAPI dependency is gone): push `main`, then run the **release** workflow with `minor`
+  (`docs/thunderstore-upload.md`).
 
 ## Not seen in game yet
 
-- LootMagnet: the "flying drops wait while Yi is dead" path is verified by review only.
+- LootMagnet: the "flying drops wait while Yi is dead" path is verified by review only, and so is its 2026-10-18 fix
+  (coins keep flying to a dead Yi when NoDeathPenalty keeps the death's Jin): die while coins fly, then compare
+  F9's `gold=` before and after the revive.
+- DashInvulnerability: the 2026-10-18 fix of the DodgeEnd tolerance (audit combat-1) was tested with single dashes
+  only; chained dashes (`keptDashes` rising in F9) not yet.
 - JinMultipliers: Transmute Unto Wealth and selling not yet seen in the log (`[jin] Transmute Unto Wealth`,
   `[jin] sold`; `is not a sale` would mean the 3D printer uses another trade type).
 - NoDeathPenalty: picking up an empty bag with the Life Recovery or Azure Recovery skill (I don't have them yet).
@@ -34,6 +40,11 @@ Every planned feature is done. Next: the first release, unless I ask for a new f
   bag and zeroed Jin (on, then off). Fixing it needs one more patch (the pending flag before
   `NeedDeathPenaltyCheck`); whether `CanStoreDeadRecord` can flip between two deaths without a scene load is
   UNCONFIRMED. An unretrieved bag from a vanilla death is overwritten by the next death, as in vanilla.
+- Hot reload, dev only: each reload leaves the old plugin object and BossHPNumbers' destroyed canvas in
+  RCGLifeCycle's static list (a few entries, never read again), and a reload during a quick revive's fade runs the
+  old assembly's FadeToBlack callback.
+- JinMultipliers: at the 99,999 cap a sale (and "sell all") still takes the item and the Jin is lost, as in vanilla
+  (my choice; said in the Selling description and the README).
 
 ## If it happens again
 
@@ -53,3 +64,6 @@ Every planned feature is done. Next: the first release, unless I ask for a new f
   "Apply the Teleport review findings" (reports in `research\teleport.review*.md`). The feature rename was
   checked by building, reloading and reading the log, not by a review.
 - On 2026-10-18 the session handoff file `PROMPT-NEW-SESSION.md` was split into `CLAUDE.md` and `docs/`.
+- On 2026-10-18 the code was audited (10 Opus areas, Haiku checks): `..\ninesols\research\audit\SUMMARY.md`. Its fix
+  plan was applied in the commits after 1.0.0, up to "Drop the NineSolsAPI dependency"; the audit was wrong that a
+  release install only needed the RCGLifeCycle registration (Unity also destroys the manager object at startup).

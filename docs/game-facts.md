@@ -129,11 +129,29 @@ Wiring seen in game with a one-off F9 dump (commit `37742f6`).
   method clears it). `SetLastSaveItem` writes the flag before a lookup that throws for unknown nodes;
   `TeleportPointCollection` refuses the Pavilion as Last Node; Last Node never changes the respawn point.
 
+## Startup and quitting to the title screen
+
+- Seen in game (2026-10-18, no NineSolsAPI): Unity destroys BepInEx's manager object right after the chainloader,
+  when the first scene loads; `DontDestroyOnLoad` does not hold yet. `HideAndDontSave` keeps it (BepInEx's
+  `HideManagerGameObject`, NineSolsAPI's Awake, our `Plugin.RegisterLifeCycle`).
+- A quit to the title screen runs `DestroyAllGameObjects._DestroyAll` (rcg.rcgmakercore.Runtime): it destroys every
+  `FindObjectsOfType<GameObject>(true)` result except objects in `RCGLifeCycle`'s list, itself and
+  `PrimeTweenManager`. `RCGLifeCycle.DontDestroyForever` adds the object and its current children, calls
+  `DontDestroyOnLoad` and appends " (RCGLifeCycle)" to the name.
+- The game's respawn reload calls `Player.ResetParent` (`GameCore.ResetWhenRespawnReloadScene`), which puts Yi back
+  under his original parent after a lift or `PlayerTransformParentChangeTrigger` made him a child of something.
+- `Timer` (RCG_General) adds new tasks at the start of its own Update and counts `RCGTime.deltaTime` (=
+  `Time.deltaTime`) per task, so a task added in a frame may count that frame's deltaTime, depending on whether
+  Timer updates after the player (script execution order, a project setting: UNCONFIRMED).
+
 ## Config menu and runtime
 
 - ConfigurationManager 18.3.1 finds `ConfigurationManagerAttributes` by type name, copies `Order`/`IsAdvanced`
   by field name, sorts by Order descending.
 - BepInEx's chainloader adds every plugin in one loop, so every plugin's Awake runs before any Start.
+- GUIDs of the mods our features replace: `supidowagon.PerfectParry`, `nozwock.PerfectParry`,
+  `supidowagon.AnyDirectionParry`, `nozwock.NoDeathPenalty`, `HPNumbers`, `nozwock.FarawayPickup`, `JinMultiplier`,
+  `nozwock.TeleportFromAnyNode`, `TeleportFromAnywhere` (Ixrec's, confirmed from its DLL).
 - HarmonyX 2.9 `PatchAll(Type)` = `CreateClassProcessor(type, true).Patch()`; `[HarmonyPatch(type, "Name")]`
   resolves with `AccessTools.DeclaredMethod`; `AccessTools.MethodDelegate` builds open-instance delegates for
   private methods; there is no `AccessTools.AsyncMoveNext` (resolve state machines through

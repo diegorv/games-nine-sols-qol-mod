@@ -89,7 +89,8 @@ Multipliers for the Jin you earn, all 1 (unchanged) by default:
 The death bag is never multiplied.
 
 Note: picking up coins can take your Jin above 99,999, but the game cuts it back to 99,999 the next time you
-buy or sell something, and the excess is lost. Spend it before you get there.
+buy or sell something, and the excess is lost. Spend it before you get there. At 99,999 a sale still takes the
+item (also with "sell all") and its Jin is lost, as in the game.
 
 ## Travel
 

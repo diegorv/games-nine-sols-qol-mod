@@ -49,7 +49,8 @@ internal static class JinMultipliersFeature {
             "talisman explosion. Vanilla: 1", range, name: "Transmute Unto Wealth");
         Selling = section.Bind("Selling", 1,
             "Multiplies the Jin you receive when you sell an item, such as recycling at the 3D printer. The " +
-            "shop shows the multiplied amount. Prices you pay are unchanged. Vanilla: 1", range);
+            "shop shows the multiplied amount. Prices you pay are unchanged. At 99,999 Jin a sale still takes " +
+            "the item but the Jin is lost, as in the game. Vanilla: 1", range);
 
         DebugTools.AddDumpSection(Describe);
     }
