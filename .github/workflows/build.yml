@@ -1,55 +1,158 @@
 name: build
 
+# Every push and pull request builds the mod against every game version in libs-stripped.
+# A tag vMAJOR.MINOR.PATCH also releases that version: the GitHub release (package zip, DLL,
+# checksums, notes from the commits) and, once approved in the thunderstore environment, the
+# Thunderstore upload.
 on:
   push:
     branches: [ "main" ]
-    tags:
-      - 'v*'
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: 
+  workflow_dispatch:
+
+env:
+  TCLI_VERSION: 0.2.4
 
 jobs:
   build:
-    permissions: 
-      contents: write
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The changelog reads the commits and tags
+          fetch-depth: 0
       - name: Download libs-stripped
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: nine-sols-modding/libs-stripped
           path: libs-stripped
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
       - name: Restore dependencies
         run: dotnet restore
       - name: Install tcli
-        run: dotnet tool install -g tcli
+        run: dotnet tool install -g tcli --version "$TCLI_VERSION"
       - name: Check against all game versions
         run: |
           cut -f1 -d' ' libs-stripped/versions.txt | while IFS= read -r version; do
             echo "Checking $version"
             dotnet build --no-restore -p:DllPath="$PWD/libs-stripped/$version"
           done
-      - name: Publish build
+      - name: Version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Tag $GITHUB_REF_NAME is not vMAJOR.MINOR.PATCH"
+              exit 1
+            fi
+          else
+            version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Source/NineSolsQoL.csproj)
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Changelog
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p thunderstore/build/files
+          scripts/changelog.sh full "$GITHUB_REF_NAME" > thunderstore/build/files/CHANGELOG.md
+          scripts/changelog.sh notes "$GITHUB_REF_NAME" > thunderstore/build/notes.md
+          cat thunderstore/build/notes.md
+      - name: Package
         run: |
           publish_version=$(cut -f1 -d' ' libs-stripped/versions.txt | tail -n1)
-          dotnet publish --no-restore -p:DllPath="$PWD/libs-stripped/$publish_version"
+          dotnet publish --no-restore -p:DllPath="$PWD/libs-stripped/$publish_version" \
+            -p:Version="${{ steps.version.outputs.version }}"
+      - name: Checksums
+        working-directory: thunderstore/build
+        run: |
+          cp files/NineSolsQoL.dll .
+          sha1sum *.zip NineSolsQoL.dll > SHA1SUMS
+          sha256sum *.zip NineSolsQoL.dll > SHA256SUMS
+          cat SHA1SUMS SHA256SUMS
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build
+          name: package
           path: |
             thunderstore/build/*.zip
-            thunderstore/build/dll/*.dll
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+            thunderstore/build/NineSolsQoL.dll
+            thunderstore/build/SHA1SUMS
+            thunderstore/build/SHA256SUMS
+            thunderstore/build/notes.md
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
         with:
+          name: package
+          path: package
+      - name: Release notes
+        run: |
+          {
+            echo "## Changes"
+            echo
+            cat package/notes.md
+            echo
+            echo "## Install"
+            echo
+            echo "With r2modman or the Thunderstore Mod Manager:" \
+              "[diegorv/NineSolsQoL](https://thunderstore.io/c/nine-sols/p/diegorv/NineSolsQoL/)." \
+              "The zip below is the same package, for **Import local mod**."
+            echo
+            echo "## Checksums"
+            echo
+            echo '```'
+            cat package/SHA1SUMS package/SHA256SUMS
+            echo '```'
+          } > body.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: NineSolsQoL ${{ needs.build.outputs.version }}
+          body_path: body.md
           files: |
-            thunderstore/build/*.zip
-            thunderstore/build/dll/*.dll
+            package/*.zip
+            package/NineSolsQoL.dll
+            package/SHA1SUMS
+            package/SHA256SUMS
+
+  thunderstore:
+    needs: [ build, release ]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    # Required reviewers on this environment: a version can never be changed once uploaded
+    environment:
+      name: thunderstore
+      url: https://thunderstore.io/c/nine-sols/p/diegorv/NineSolsQoL/
+    steps:
+      # tcli publish reads the communities and categories from thunderstore.toml
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: package
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Install tcli
+        run: dotnet tool install -g tcli --version "$TCLI_VERSION"
+      - name: Publish
+        working-directory: thunderstore
+        env:
+          TCLI_AUTH_TOKEN: ${{ secrets.TCLI_AUTH_TOKEN }}
+        run: |
+          version="${{ needs.build.outputs.version }}"
+          tcli publish --package-version "$version" --file "../package/diegorv-NineSolsQoL-$version.zip"

@@ -1,7 +1,7 @@
 # Nine Sols QoL
 
-Quality of life tweaks for Nine Sols. Each one can be turned off in the config menu (F1), where they are
-grouped as below. Work in progress.
+Quality of life tweaks for Nine Sols: respawn near death, no death penalty, an easier perfect parry, loot magnet
+and more. Each one can be turned off in the config menu (F1), where they are grouped as below.
 
 Installing it also installs NineSolsAPI (which keeps the game from unloading the mods when it returns to the
 title screen; note that it turns achievements off by default, in its own config) and the BepInEx
@@ -102,3 +102,30 @@ It needs the game's teleport, which the story unlocks later on, or Early telepor
 Off by default. Use the game's teleport before the story unlocks it: at the Pavilion's Root Node, and with
 Teleport from any node at every Root Node that shows the Pavilion button. You can only go to Root Nodes you have
 activated. Nothing is unlocked in your save, and once the game gives you the teleport its own rules apply.
+
+## Compatibility
+
+Each feature turns itself off, with a warning in the log, when the mod it replaces is installed, so the two never
+patch the game twice:
+
+| Feature | Turns off with |
+|---|---|
+| Perfect parry window | Supidowagon's or nozwock's PerfectParry |
+| Parry from behind | Supidowagon's AnyDirectionParry |
+| No death penalty | nozwock's NoDeathPenalty |
+| Boss HP numbers | MicheliniDev's HPNumbers |
+| Loot magnet | nozwock's FarawayPickup |
+| Jin multipliers | Ixrec's JinMultiplier |
+| Teleport from any node | nozwock's TeleportFromAnyNode, Ixrec's TeleportFromAnywhere |
+
+## Credits
+
+Every feature is written from the game's own code; the ideas come from these mods, which are worth a look:
+[PerfectParry and AnyDirectionParry](https://thunderstore.io/c/nine-sols/p/Supidowagon/PerfectParry/) by
+Supidowagon, [JinMultiplier](https://thunderstore.io/c/nine-sols/p/Ixrec/JinMultiplier/) and
+[TeleportFromAnywhere](https://thunderstore.io/c/nine-sols/p/Ixrec/TeleportFromAnywhere/) by Ixrec,
+[FarawayPickup](https://thunderstore.io/c/nine-sols/p/nozwock/FarawayPickup/),
+[NoDeathPenalty](https://thunderstore.io/c/nine-sols/p/nozwock/NoDeathPenalty/) and TeleportFromAnyNode by
+nozwock, and [HPNumbers](https://thunderstore.io/c/nine-sols/p/MicheliniDev/HPNumbers/) by MicheliniDev.
+
+Source code, issues and the full credits: [GitHub](https://github.com/diegorv/games-nine-sols-qol-mod).

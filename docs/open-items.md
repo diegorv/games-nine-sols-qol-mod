@@ -1,13 +1,11 @@
 # Open items
 
-Every planned feature is done. Next: release polish, unless I ask for a new feature.
+Every planned feature is done. Next: the first release, unless I ask for a new feature.
 
-## Release polish
+## Release
 
-- `DebugLogging` off by default.
-- Thunderstore namespace, websiteUrl, icon, version.
-- Remove one-off dump lines, e.g. LootMagnet's F9 list of nearby drops (it was a one-off check: the bag is
-  ignored, seen in game).
+- Our own `thunderstore/icon.png` (the template's placeholder is still there).
+- The rest of the first release: `docs/thunderstore-upload.md`.
 
 ## Not seen in game yet
 

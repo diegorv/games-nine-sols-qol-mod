@@ -4,7 +4,6 @@ using System.Linq;
 using BepInEx.Configuration;
 using NineSolsQoL.Core;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace NineSolsQoL.Features.Loot.LootMagnet;
 
@@ -21,8 +20,6 @@ namespace NineSolsQoL.Features.Loot.LootMagnet;
 // A drop still flying when a scene loads is returned to its pool without being credited, as in
 // vanilla; the game logs "When DropItem destroyed and absorbed?" for it.
 internal static class LootMagnetFeature {
-    private const int DumpedDrops = 15;
-
     public static ConfigEntry<bool> Enabled = null!;
     public static ConfigEntry<float> Delay = null!;
 
@@ -132,27 +129,10 @@ internal static class LootMagnetFeature {
         flights[type] = count + 1;
     }
 
-    // The flights so far and the drops around, to check what flies and what does not
+    // The flights so far, to check what flies
     private static IEnumerable<string> Describe(GameCore core) {
         var counts = flights.Count > 0 ? string.Join(", ", flights.Select(f => $"{f.Key.Name} {f.Value}")) : "none";
         yield return $"LootMagnet: enabled={Enabled.Value} delay={Delay.Value}s failed={failed} flights: {counts}";
-
-        var privates = GamePrivates.DropItems;
-        if (privates == null) {
-            yield return "LootMagnet: DropItem's private fields are missing";
-            yield break;
-        }
-
-        var center = core.player.transform.position;
-        var drops = Object.FindObjectsOfType<DropItem>()
-            .OrderBy(d => Vector2.Distance(center, d.transform.position))
-            .ToList();
-        yield return $"LootMagnet: {drops.Count} active drops, nearest {Math.Min(drops.Count, DumpedDrops)}:";
-        foreach (var drop in drops.Take(DumpedDrops)) {
-            var effect = privates.Effect(drop);
-            yield return $"  '{drop.transform.HierarchyPath()}' state={drop.state} touchToPick={drop.IsTouchPlayerToPick} " +
-                         $"effect={(effect != null ? effect.GetType().Name : "none")} " +
-                         $"distance={Vector2.Distance(center, drop.transform.position):0}";
-        }
+        if (GamePrivates.DropItems == null) yield return "LootMagnet: DropItem's private fields are missing";
     }
 }

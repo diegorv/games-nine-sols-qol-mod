@@ -141,8 +141,8 @@ that holds ConfigurationManager and ScriptEngine; NineSolsAPI registers that obj
 
 - `F9` (`DumpKey`): writes the player state, each feature's dump section and every collider around the player
   to the log.
-- `DebugLogging` (on by default while in development): detailed diagnostics, including `[hitch]` lines for frames
-  slower than 100 ms during gameplay.
+- `DebugLogging` (off by default; turn it on in the `.cfg` while developing): detailed diagnostics, including
+  `[hitch]` lines for frames slower than 100 ms during gameplay.
 
 ## Reading the game code
 

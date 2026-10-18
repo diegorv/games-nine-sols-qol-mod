@@ -31,7 +31,7 @@ internal static class DebugTools {
 
     public static void Init(ConfigFile config) {
         var section = new ConfigSection(config, "Debug", MenuCategory.Debug, null);
-        DebugLogging = section.Bind("DebugLogging", true,
+        DebugLogging = section.Bind("DebugLogging", false,
             "Write detailed diagnostics to the BepInEx log", advanced: true);
         // F8 opens one of the game's own debug screens
         DumpKey = section.Bind("DumpKey", new KeyboardShortcut(KeyCode.F9),

@@ -4,7 +4,8 @@
         <RootNamespace>NineSolsQoL</RootNamespace>
         <Product>Nine Sols QoL</Product>
         <Description>Quality of life tweaks for Nine Sols</Description>
-        <Version>0.1.0</Version>
+        <!-- Local builds; CI passes the release tag's version (-p:Version), and the package takes it from here -->
+        <Version>1.0.0</Version>
         <!-- Used by BepInEx.PluginInfoProps for MyPluginInfo.PLUGIN_GUID (and the config file name) -->
         <BepInExPluginGuid>diegorv.NineSolsQoL</BepInExPluginGuid>
         <TargetFramework>netstandard2.1</TargetFramework>
@@ -74,7 +75,8 @@ Did you forget to adjust your NineSolsPath '$(NineSolsPath)'?" />
     </Target>
 
     <Target Name="PackageMod" AfterTargets="Publish">
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="../thunderstore/build/dll" SkipUnchangedFiles="true" />
-        <Exec Command="tcli build --config-path ../thunderstore/thunderstore.toml" />
+        <!-- Everything in build/files goes to the zip's root (CI also writes CHANGELOG.md there) -->
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="../thunderstore/build/files" SkipUnchangedFiles="true" />
+        <Exec Command="tcli build --config-path ../thunderstore/thunderstore.toml --package-version $(Version)" />
     </Target>
 </Project>

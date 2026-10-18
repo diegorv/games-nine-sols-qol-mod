@@ -8,6 +8,7 @@ loop; `..\CLAUDE.md` maps the workspace (game, r2modman profile, decompiled game
 | `docs/features.md` | How each feature works, and the design choices I made |
 | `docs/game-facts.md` | Game facts verified in the decompiled code or in game: read before patching that area |
 | `docs/open-items.md` | Untested paths, accepted limits, release polish |
+| `docs/thunderstore-upload.md` | How a tag becomes a GitHub release and a Thunderstore version; release checklist |
 | `..\ninesols\research\` | Per-feature research reports (outside the repo: they quote decompiled code) |
 
 The features were renamed on 2026-10-17: Respawn → RespawnNearDeath, ParryWindow → PerfectParryWindow,
@@ -35,7 +36,7 @@ HealSpeed → FastHeal. `research\` and older commits use the old names.
 - **Instrument before fixing.** Logs and the F9 dump answer in minutes what guessing does not.
 - I test in the game. You read `LogOutput.log` directly from the profile.
 - **Commit at the end of each stage**, yourself, with an English message (one commit per stage, only that
-  stage's files, on `master`; never push). I sometimes commit unrelated files myself: check `git log` before
+  stage's files, on `main`; push or tag only when I ask). I sometimes commit unrelated files myself: check `git log` before
   committing.
 - Ask me before design decisions that change how the game plays (defaults, what a feature covers). Give a
   recommendation first.
