@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using UnityEngine;
 
@@ -28,8 +29,12 @@ internal static class RespawnNearDeathPatches {
     [HarmonyPatch(typeof(GameCore), nameof(GameCore.SceneLoaded))]
     [HarmonyPostfix]
     private static void AfterSceneLoaded(GameLevel newLevel) {
-        SafeTrail.OnSceneLoaded(newLevel);
-        ArenaTracker.OnSceneLoaded(newLevel);
+        try {
+            SafeTrail.OnSceneLoaded(newLevel);
+            ArenaTracker.OnSceneLoaded(newLevel);
+        } catch (Exception e) {
+            Log.Error($"RespawnNearDeath could not reset its data for the new scene: {e}");
+        }
     }
 
     // The player stepped into a fight entrance: the game takes control and walks the player in
