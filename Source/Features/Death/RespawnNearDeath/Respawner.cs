@@ -32,6 +32,9 @@ internal static class Respawner {
 
         var player = core.player;
         try {
+            // Off a lift or platform that had made Yi its child, as the game's respawn reload does
+            // (GameCore.ResetWhenRespawnReloadScene); nothing changes when the parent is the original
+            player.ResetParent();
             // Monsters and level back to their start; also spawns the death bag. The reset writes
             // where the player died as safe ground, which must not go into the trail.
             SafeTrail.Paused = true;
